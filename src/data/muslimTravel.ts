@@ -276,7 +276,7 @@ export const heritageSites: HeritageSite[] = [
     descriptionLocal: 'Oraylıq Aziyadaǵı eń áyyemgi múqaddes komplekslerden biri. Adam (xaliq) qábiri, Jáhán Saatı hám Shamun Nabi lahadı bar.',
     century: '4th century BCE',
     significance: 'Major ziyarat site — pilgrims come from across Central Asia',
-    image: 'https://images.pexels.com/photos/1654748/pexels-photo-1654748.jpeg',
+    image: 'https://images.pexels.com/photos/1654748/pexels-photo-1654748.jpeg?auto=compress&cs=tinysrgb&w=800&q=75',
     visited: false,
   },
   {
@@ -290,7 +290,7 @@ export const heritageSites: HeritageSite[] = [
     descriptionLocal: 'XIV ásir minarası, Oraylıq Aziyadaǵı eń bálent (62 m). YUNESKO Jan-pánlisindegi úlken islam bilim orayı bolǵan.',
     century: '14th century CE',
     significance: 'UNESCO World Heritage Site',
-    image: 'https://images.pexels.com/photos/1654748/pexels-photo-1654748.jpeg',
+    image: 'https://images.pexels.com/photos/1654748/pexels-photo-1654748.jpeg?auto=compress&cs=tinysrgb&w=800&q=75',
     visited: false,
   },
   {
@@ -304,7 +304,7 @@ export const heritageSites: HeritageSite[] = [
     descriptionLocal: 'Mizdakhan ishinde jaylasqan. Shamun Nabi (a.s.) dep atalatuǵın 18 metrli lahad.',
     century: '9th-12th century CE',
     significance: 'Active ziyarat pilgrimage site',
-    image: 'https://images.pexels.com/photos/1654748/pexels-photo-1654748.jpeg',
+    image: 'https://images.pexels.com/photos/1654748/pexels-photo-1654748.jpeg?auto=compress&cs=tinysrgb&w=800&q=75',
     visited: false,
   },
   {
@@ -318,7 +318,7 @@ export const heritageSites: HeritageSite[] = [
     descriptionLocal: 'Nókis orayındaǵı tarixiyy Juma meshiti, XIX ásirde qayta qurılǵan.',
     century: '19th century CE',
     significance: 'Active place of worship',
-    image: 'https://images.pexels.com/photos/1654748/pexels-photo-1654748.jpeg',
+    image: 'https://images.pexels.com/photos/1654748/pexels-photo-1654748.jpeg?auto=compress&cs=tinysrgb&w=800&q=75',
     visited: false,
   },
   {
@@ -332,7 +332,7 @@ export const heritageSites: HeritageSite[] = [
     descriptionLocal: 'XII ásir qorǵan karvansarayı, Jibek jolı sayaxatshıları ushın dem alıs hám namaz orayı bolǵan.',
     century: '12th century CE',
     significance: 'Silk Road heritage',
-    image: 'https://images.pexels.com/photos/1654748/pexels-photo-1654748.jpeg',
+    image: 'https://images.pexels.com/photos/1654748/pexels-photo-1654748.jpeg?auto=compress&cs=tinysrgb&w=800&q=75',
     visited: false,
   },
   {
@@ -346,7 +346,7 @@ export const heritageSites: HeritageSite[] = [
     descriptionLocal: 'Zardushtiy dahma, keyin islam ziyarat orayına ayırılǵan. Shıbınshılar shaqalarǵa shash baǵıshlap, dua oqıydı.',
     century: '1st century BCE',
     significance: 'Cross-faith pilgrimage landmark',
-    image: 'https://images.pexels.com/photos/1654748/pexels-photo-1654748.jpeg',
+    image: 'https://images.pexels.com/photos/1654748/pexels-photo-1654748.jpeg?auto=compress&cs=tinysrgb&w=800&q=75',
     visited: false,
   },
 ];

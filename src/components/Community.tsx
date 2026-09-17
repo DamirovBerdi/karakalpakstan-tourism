@@ -78,14 +78,37 @@ export default function Community() {
 
   // Load profiles for 1-on-1 chat
   const loadProfiles = useCallback(async () => {
-    const { data } = await supabase
-      .from('community_profiles')
-      .select('*')
-      .neq('id', user?.id ?? '00000000-0000-0000-0000-000000000000')
-      .order('created_at', { ascending: false })
-      .limit(20);
-    setProfiles((data ?? []) as CommunityProfile[]);
-    setLoading(false);
+    try {
+      const cached = localStorage.getItem('kk_community_profiles');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setProfiles(parsed);
+          setLoading(false);
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    try {
+      const { data } = await supabase
+        .from('community_profiles')
+        .select('*')
+        .neq('id', user?.id ?? '00000000-0000-0000-0000-000000000000')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (data) {
+        setProfiles(data as CommunityProfile[]);
+        try {
+          localStorage.setItem('kk_community_profiles', JSON.stringify(data));
+        } catch {}
+      }
+    } catch {
+      // keep cached
+    } finally {
+      setLoading(false);
+    }
   }, [user?.id]);
 
   // Load 1-on-1 direct messages

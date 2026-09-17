@@ -57,7 +57,7 @@ export const FESTIVALS: Festival[] = [
       uz: "Fors Yangi yili va Qoraqalpog'istondagi eng katta madaniy bayram. An'anaviy kurash, ot o'yinlari, xalq musiqasi va sumalak tarqatish. Bepul.",
       kaa: "Fors Jańa jılı hám Qaraqalpaqstandaǵı eń úlken mádeniy bayram. An'anagóy kurash, at oyınları, xalıq muzıkası hám sumalak tarqatıw. Biypul.",
     },
-    image: "https://images.pexels.com/photos/1078958/pexels-photo-1078958.jpeg?auto=compress&cs=tinysrgb&w=800",
+    image: "https://images.pexels.com/photos/1078958/pexels-photo-1078958.jpeg?auto=compress&cs=tinysrgb&w=800&q=75",
   },
   {
     id: 2,
@@ -83,7 +83,7 @@ export const FESTIVALS: Festival[] = [
       uz: "Orol dengizi quruq tubidagi noyob qish festivali. Muz haykallari, eko-aktivizm suhbatlari, kema qabristoni fotosergihamlari va an'anaviy musiqa.",
       kaa: "Aral teńizi qurǵaq astındaǵı noyob qıs festivalı. Muz háykelleri, eko-aktivizm sóylesiwleri, keme qábiristanı fotosergihamları hám an'anagóy muzıka.",
     },
-    image: "https://images.pexels.com/photos/349879/pexels-photo-349879.jpeg?auto=compress&cs=tinysrgb&w=800",
+    image: "https://images.pexels.com/photos/349879/pexels-photo-349879.jpeg?auto=compress&cs=tinysrgb&w=800&q=75",
   },
   {
     id: 3,
@@ -109,7 +109,7 @@ export const FESTIVALS: Festival[] = [
       uz: "Orol dengizining cho'l qirg'og'idagi g'aroyib elektron musiqa festivali. Mahalliy va xalqaro DJ'lar. Chodir mavjud. Bilet ~$40–60.",
       kaa: "Aral teńiziniń shól qıyaǵındaǵı g'arripa elektron muzıka festivalı. Jergilikli hám xalıqaralıq DJ'lar. Shatır bar. Bilet ~$40–60.",
     },
-    image: "https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg?auto=compress&cs=tinysrgb&w=800",
+    image: "https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg?auto=compress&cs=tinysrgb&w=800&q=75",
   },
   {
     id: 4,
@@ -134,7 +134,7 @@ export const FESTIVALS: Festival[] = [
       uz: "O'zbekiston Mustaqillik kuni paradlari, kontsertlari, Amudaryo ustida otashinlar va an'anaviy ovqat stendlari bilan. Bepul.",
       kaa: "Ózbekstan Mustaqillıq kúni paradları, kontsertleri, Ámiwdárya ústinde otashınlar hám an'anagóy azıq stendleri menen. Biypul.",
     },
-    image: "https://images.pexels.com/photos/259868/pexels-photo-259868.jpeg?auto=compress&cs=tinysrgb&w=800",
+    image: "https://images.pexels.com/photos/259868/pexels-photo-259868.jpeg?auto=compress&cs=tinysrgb&w=800&q=75",
   },
   {
     id: 5,
@@ -160,7 +160,7 @@ export const FESTIVALS: Festival[] = [
       uz: "Qadimiy Xorazm qal'alari — Toproq-Qal'a, Ayoz-Qal'a va Qizil-Qal'a'ga yillik ekspeditsiya. Arxeologlar 2000 yillik xom g'isht xarobalari bo'ylab tur olib boradilar. Yulduzlar ostida lager. ~$25 kishi boshiga.",
       kaa: "Áyyemgi Xorezm qorǵanları — Topraq-Qala, Ayaz-Qala hám Qızıl-Qala'ǵa jılına ekspediciya. Arxeologlar 2000 jıllıq shiy gerbish xarabaları boyınsha tur alıp baradı. Juldızlar astında lager. ~$25 kisi basına.",
     },
-    image: "https://images.pexels.com/photos/260929/pexels-photo-260929.jpeg?auto=compress&cs=tinysrgb&w=800",
+    image: "https://images.pexels.com/photos/260929/pexels-photo-260929.jpeg?auto=compress&cs=tinysrgb&w=800&q=75",
   },
   {
     id: 6,
@@ -186,7 +186,7 @@ export const FESTIVALS: Festival[] = [
       uz: "Paxta yig'im-terimi davomida Qoraqalpoq hunarmandchiligini nishonlash. An'anaviy gilam to'qish ko'rgazmasi, kumush zeb-ziynat, kashta tikish va xalq raqslari. Hunarmandlardan to'g'ridan-to'g'ri. Bepul.",
       kaa: "Paxta jıyıw-terimi dawamında Qaraqalpaq hunarmentligin nishanlaw. An'anagóy gilem toqıw kórgazması, kúmis ziynet, shıyǵıslaw hám xalıq oyınları. Hunarmentlerden tikkeley. Biypul.",
     },
-    image: "https://images.pexels.com/photos/6193462/pexels-photo-6193462.jpeg?auto=compress&cs=tinysrgb&w=800",
+    image: "https://images.pexels.com/photos/6193462/pexels-photo-6193462.jpeg?auto=compress&cs=tinysrgb&w=800&q=75",
   },
 ];
 
@@ -218,7 +218,7 @@ export const HIDDEN_GEMS: HiddenGem[] = [
       uz: "O'z idishingizni oling — yaqinda do'kon yo'q. Shomana mahalliy aholisidan yo'l so'rang; GPS ishlamaydi.",
       kaa: "Óz idisińizdi alıń — jaqında dúkan joq. Shomanay jergilikli xalqınan jol soráń; GPS islemeydi.",
     },
-    image: "https://images.pexels.com/photos/2406730/pexels-photo-2406730.jpeg?auto=compress&cs=tinysrgb&w=800",
+    image: "https://images.pexels.com/photos/2406730/pexels-photo-2406730.jpeg?auto=compress&cs=tinysrgb&w=800&q=75",
   },
   {
     id: 2,
@@ -247,7 +247,7 @@ export const HIDDEN_GEMS: HiddenGem[] = [
       uz: "Qo'ng'irotdan mahalliy taksi yollang (~$10). Tongi eng yaxshi — qoya to'q sariq yonadi. Mustahkam oyoq kiyim kiyish.",
       kaa: "Qońırattan jergilikli taksi jallań (~$10). Tań atıwında eń jaqsı — qoya narınjalıq janadı. Bekkem ayaq kiyim kiyiw.",
     },
-    image: "https://images.pexels.com/photos/1538154/pexels-photo-1538154.jpeg?auto=compress&cs=tinysrgb&w=800",
+    image: "https://images.pexels.com/photos/1538154/pexels-photo-1538154.jpeg?auto=compress&cs=tinysrgb&w=800&q=75",
   },
   {
     id: 3,
@@ -276,7 +276,7 @@ export const HIDDEN_GEMS: HiddenGem[] = [
       uz: "Oldindan qo'ng'iroq qiling — internet bronlash yo'q. Chimboy Mehmon Uyida bog'lanishni so'rang. Kichik sovg'a oling (choy yoki shirinlik).",
       kaa: "Aldın dawıs salıń — internet bronlew joq. Chimboy Miyman Úyinde baylanıstı soráń. Kishi sawǵa alıń (shay yaki tatlı).",
     },
-    image: "https://images.pexels.com/photos/2823037/pexels-photo-2823037.jpeg?auto=compress&cs=tinysrgb&w=800",
+    image: "https://images.pexels.com/photos/2823037/pexels-photo-2823037.jpeg?auto=compress&cs=tinysrgb&w=800&q=75",
   },
   {
     id: 4,
@@ -305,7 +305,7 @@ export const HIDDEN_GEMS: HiddenGem[] = [
       uz: "Bu yerga 4x4 kerak — Nukusdan boshqa sayohatchilar bilan jeepni bo'ling (~$25/kishi). Tushdan keyin shamol kuchayganda borgan ma'qul.",
       kaa: "Bul jerge 4x4 kerek — Nókisten basqa sayaxatshılar menen jeepni bóliń (~$25/kisi). Tústen keyin samal kúsheygende barǵan ma'qul.",
     },
-    image: "https://images.pexels.com/photos/1439173/pexels-photo-1439173.jpeg?auto=compress&cs=tinysrgb&w=800",
+    image: "https://images.pexels.com/photos/1439173/pexels-photo-1439173.jpeg?auto=compress&cs=tinysrgb&w=800&q=75",
   },
 ];
 

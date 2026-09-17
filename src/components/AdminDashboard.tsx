@@ -605,15 +605,19 @@ function DashboardPanel({ onLogout, adminInfo }: { onLogout: () => void; adminIn
 
     const updated = [newGuide, ...guidesList];
     setGuidesList(updated);
-
-    const { error } = await supabase.from('guides').insert(newGuide);
-    if (error) {
-      await supabase.from('admin_config').upsert({
-        key: 'custom_guides',
-        value: JSON.stringify(updated),
-        updated_at: new Date().toISOString(),
-      });
+    try {
+      localStorage.setItem('kk_custom_guides', JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent('kk:guides-updated', { detail: updated }));
+    } catch {
+      // ignore
     }
+
+    await supabase.from('guides').insert(newGuide);
+    await supabase.from('admin_config').upsert({
+      key: 'custom_guides',
+      value: JSON.stringify(updated),
+      updated_at: new Date().toISOString(),
+    });
 
     setShowAddGuideModal(false);
     setGuideName('');
@@ -625,6 +629,13 @@ function DashboardPanel({ onLogout, adminInfo }: { onLogout: () => void; adminIn
   const handleDeleteGuide = async (id: string) => {
     const updated = guidesList.filter((g) => g.id !== id);
     setGuidesList(updated);
+    try {
+      localStorage.setItem('kk_custom_guides', JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent('kk:guides-updated', { detail: updated }));
+    } catch {
+      // ignore
+    }
+
     await supabase.from('guides').delete().eq('id', id);
     await supabase.from('admin_config').upsert({
       key: 'custom_guides',
@@ -652,15 +663,19 @@ function DashboardPanel({ onLogout, adminInfo }: { onLogout: () => void; adminIn
 
     const updated = [newAgency, ...agenciesList];
     setAgenciesList(updated);
-
-    const { error } = await supabase.from('tour_agencies').insert(newAgency);
-    if (error) {
-      await supabase.from('admin_config').upsert({
-        key: 'custom_agencies',
-        value: JSON.stringify(updated),
-        updated_at: new Date().toISOString(),
-      });
+    try {
+      localStorage.setItem('kk_custom_agencies', JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent('kk:agencies-updated', { detail: updated }));
+    } catch {
+      // ignore
     }
+
+    await supabase.from('tour_agencies').insert(newAgency);
+    await supabase.from('admin_config').upsert({
+      key: 'custom_agencies',
+      value: JSON.stringify(updated),
+      updated_at: new Date().toISOString(),
+    });
 
     setShowAddAgencyModal(false);
     setAgencyName('');
@@ -672,6 +687,13 @@ function DashboardPanel({ onLogout, adminInfo }: { onLogout: () => void; adminIn
   const handleDeleteAgency = async (id: string) => {
     const updated = agenciesList.filter((a) => a.id !== id);
     setAgenciesList(updated);
+    try {
+      localStorage.setItem('kk_custom_agencies', JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent('kk:agencies-updated', { detail: updated }));
+    } catch {
+      // ignore
+    }
+
     await supabase.from('tour_agencies').delete().eq('id', id);
     await supabase.from('admin_config').upsert({
       key: 'custom_agencies',

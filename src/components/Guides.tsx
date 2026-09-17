@@ -6,7 +6,18 @@ import { supabase } from '@/lib/supabase';
 
 export default function Guides() {
   const { t } = useLang();
-  const [allGuides, setAllGuides] = useState<Guide[]>(staticGuides);
+  const [allGuides, setAllGuides] = useState<Guide[]>(() => {
+    try {
+      const cached = localStorage.getItem('kk_custom_guides');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // fallback
+    }
+    return staticGuides;
+  });
 
 interface RawGuide {
   id?: string | number;
@@ -25,46 +36,62 @@ interface RawGuide {
 
   useEffect(() => {
     async function fetchGuides() {
-      const { data, error } = await supabase.from('guides').select('*').eq('status', 'active');
-      if (!error && data && data.length > 0) {
-        setAllGuides((data as RawGuide[]).map((g) => ({
-          id: typeof g.id === 'number' ? g.id : Math.abs(String(g.id).split('').reduce((a: number, b: string) => (a << 5) - a + b.charCodeAt(0), 0)),
-          name: g.name,
-          photo: g.photo,
-          rating: g.rating,
-          reviews: g.reviews_count || 1,
-          languages: Array.isArray(g.languages) ? g.languages : [],
-          specialties: Array.isArray(g.specialties) ? g.specialties : [],
-          dailyRate: g.daily_rate || g.dailyRate || 45,
-          phone: g.phone || '',
-          whatsapp: g.whatsapp || '',
-        })));
-      } else {
+      try {
+        const { data, error } = await supabase.from('guides').select('*').eq('status', 'active');
+        if (!error && data && data.length > 0) {
+          const mapped: Guide[] = (data as RawGuide[]).map((g) => ({
+            id: typeof g.id === 'number' ? g.id : Math.abs(String(g.id).split('').reduce((a: number, b: string) => (a << 5) - a + b.charCodeAt(0), 0)),
+            name: g.name,
+            photo: g.photo,
+            rating: g.rating,
+            reviews: g.reviews_count || 1,
+            languages: Array.isArray(g.languages) ? g.languages : [],
+            specialties: Array.isArray(g.specialties) ? g.specialties : [],
+            dailyRate: g.daily_rate || g.dailyRate || 45,
+            phone: g.phone || '',
+            whatsapp: g.whatsapp || '',
+          }));
+          setAllGuides(mapped);
+          localStorage.setItem('kk_custom_guides', JSON.stringify(mapped));
+          return;
+        }
+
         const { data: cfg } = await supabase.from('admin_config').select('value').eq('key', 'custom_guides').maybeSingle();
         if (cfg?.value) {
-          try {
-            const parsed = JSON.parse(cfg.value);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setAllGuides((parsed as RawGuide[]).filter((g) => g.status !== 'inactive').map((g, idx: number) => ({
-                id: idx + 1,
-                name: g.name,
-                photo: g.photo,
-                rating: g.rating,
-                reviews: g.reviews_count || 1,
-                languages: g.languages || [],
-                specialties: g.specialties || [],
-                dailyRate: g.daily_rate || g.dailyRate || 45,
-                phone: g.phone || '',
-                whatsapp: g.whatsapp || '',
-              })));
-            }
-          } catch {
-            // Ignore invalid JSON config
+          const parsed = JSON.parse(cfg.value);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const mapped: Guide[] = (parsed as RawGuide[]).filter((g) => g.status !== 'inactive').map((g, idx: number) => ({
+              id: idx + 1,
+              name: g.name,
+              photo: g.photo,
+              rating: g.rating,
+              reviews: g.reviews_count || 1,
+              languages: g.languages || [],
+              specialties: g.specialties || [],
+              dailyRate: g.daily_rate || g.dailyRate || 45,
+              phone: g.phone || '',
+              whatsapp: g.whatsapp || '',
+            }));
+            setAllGuides(mapped);
+            localStorage.setItem('kk_custom_guides', JSON.stringify(mapped));
           }
         }
+      } catch {
+        // Keep cached/static guides on network failure
       }
     }
+
     fetchGuides();
+
+    // Listen for real-time updates from AdminDashboard in the same window/tab
+    const handleGuidesUpdated = () => fetchGuides();
+    window.addEventListener('kk:guides-updated', handleGuidesUpdated);
+    window.addEventListener('storage', handleGuidesUpdated);
+
+    return () => {
+      window.removeEventListener('kk:guides-updated', handleGuidesUpdated);
+      window.removeEventListener('storage', handleGuidesUpdated);
+    };
   }, []);
 
   return (
@@ -85,6 +112,8 @@ interface RawGuide {
                 <img
                   src={guide.photo}
                   alt={guide.name}
+                  loading="lazy"
+                  decoding="async"
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="absolute top-3 right-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-deepblue-900 shadow flex items-center gap-1">
