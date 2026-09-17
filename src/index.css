@@ -1,0 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply font-sans antialiased bg-ink-50 text-ink-900;
+  }
+  h1, h2, h3 {
+    @apply font-display tracking-tightest;
+  }
+}
+
+@layer utilities {
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-ink-100;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-gold-400 rounded-full;
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .input-base {
+    @apply w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 placeholder-ink-400/60 focus:border-garnet-400 focus:outline-none focus:ring-2 focus:ring-garnet-200 transition-colors duration-200;
+  }
+  .animate-pulse-ring {
+    animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Каракалпакский орнамент — муйиз-бордюр (используй в футере/разделителях) */
+  .ornament-muyiz-border {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='40'%3E%3Cpath d='M10 20 Q10 8, 22 8 Q30 8, 30 16 Q30 20, 24 20 Q30 20, 30 24 Q30 32, 22 32 Q10 32, 10 20 Z' fill='none' stroke='%23C9A227' stroke-width='2'/%3E%3Cpath d='M50 20 Q50 8, 62 8 Q70 8, 70 16 Q70 20, 64 20 Q70 20, 70 24 Q70 32, 62 32 Q50 32, 50 20 Z' fill='none' stroke='%23C9A227' stroke-width='2' transform='scale(-1,1) translate(-120,0)'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-size: 80px 40px;
+  }
+
+  /* Каракалпакский орнамент — одиночный спиральный муйиз, крупный полупрозрачный якорь */
+  .ornament-muyiz-anchor {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cpath d='M30 50 Q10 50, 10 30 Q10 12, 26 12 Q38 12, 38 22 Q38 30, 30 30 Q24 30, 24 25' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-size: contain;
+  }
+
+  /* Тонкий зигзаг-разделитель между секциями */
+  .ornament-zigzag {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='12'%3E%3Cpath d='M0 12 L6 0 L12 12 L18 0 L24 12' fill='none' stroke='%23C9A227' stroke-width='1.2'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-size: 24px 12px;
+  }
+
+  .hairline {
+    @apply border border-ink-900/[.08];
+  }
+}
+
+@keyframes surpriseReelBlur {
+  0% { filter: blur(0); transform: translateY(0); }
+  50% { filter: blur(2px); transform: translateY(-4px); }
+  100% { filter: blur(0); transform: translateY(0); }
+}
+.surprise-reel-spinning {
+  animation: surpriseReelBlur 0.1s linear infinite;
+}
+
+@keyframes pulse-ring {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0;
+    transform: scale(1.4);
+  }
+}
+
+/* Google Translate — hide all default UI, keep only the translation engine */
+.goog-te-banner-frame.skiptranslate,
+.goog-te-gadget-icon,
+.goog-logo-link,
+.goog-te-gadget > span > a {
+  display: none !important;
+}
+.goog-te-gadget {
+  font-size: 0 !important;
+}
+.goog-tooltip,
+.goog-tooltip:hover {
+  display: none !important;
+}
+.goog-text-highlight {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+body {
+  top: 0 !important;
+  position: static !important;
+}
+iframe.goog-te-banner-frame {
+  display: none !important;
+  visibility: hidden !important;
+}
+.skiptranslate iframe.skiptranslate {
+  display: none !important;
+}
