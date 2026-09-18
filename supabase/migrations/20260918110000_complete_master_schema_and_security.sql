@@ -545,113 +545,146 @@ drop policy if exists "game_winners_insert_own" on game_winners;
 -- =====================================================================
 
 -- 6.1. АДМИНИСТРАТОРЫ (admin_users)
+drop policy if exists "admin_users_view_admin" on admin_users;
 create policy "admin_users_view_admin" on admin_users
   for select to authenticated using (is_admin() or auth.uid() = user_id);
 
+drop policy if exists "admin_users_manage_admin" on admin_users;
 create policy "admin_users_manage_admin" on admin_users
   for all to authenticated using (is_admin()) with check (is_admin());
 
 -- 6.2. ЗАЯВКИ НА ВИЗЫ (visa_applications) — ЗАЩИТА ПАСПОРТНЫХ ДАННЫХ
+drop policy if exists "visa_insert_public" on visa_applications;
 create policy "visa_insert_public" on visa_applications
   for insert to anon, authenticated with check (true);
 
+drop policy if exists "visa_select_admin" on visa_applications;
 create policy "visa_select_admin" on visa_applications
   for select to authenticated using (is_admin());
 
+drop policy if exists "visa_manage_admin" on visa_applications;
 create policy "visa_manage_admin" on visa_applications
   for all to authenticated using (is_admin()) with check (is_admin());
 
 -- 6.3. ЗАПРОСЫ ТУРИСТОВ (tourist_requests) — ЗАЩИТА ТЕЛЕФОНОВ И БЮДЖЕТОВ
+drop policy if exists "tourist_requests_insert_public" on tourist_requests;
 create policy "tourist_requests_insert_public" on tourist_requests
   for insert to anon, authenticated with check (true);
 
+drop policy if exists "tourist_requests_select_admin" on tourist_requests;
 create policy "tourist_requests_select_admin" on tourist_requests
   for select to authenticated using (is_admin());
 
+drop policy if exists "tourist_requests_manage_admin" on tourist_requests;
 create policy "tourist_requests_manage_admin" on tourist_requests
   for all to authenticated using (is_admin()) with check (is_admin());
 
 -- 6.4. БРОНИРОВАНИЕ ТУРОВ НА АРАЛ (aral_bookings)
+drop policy if exists "aral_bookings_insert_public" on aral_bookings;
 create policy "aral_bookings_insert_public" on aral_bookings
   for insert to anon, authenticated with check (true);
 
+drop policy if exists "aral_bookings_select_admin" on aral_bookings;
 create policy "aral_bookings_select_admin" on aral_bookings
   for select to authenticated using (is_admin());
 
+drop policy if exists "aral_bookings_manage_admin" on aral_bookings;
 create policy "aral_bookings_manage_admin" on aral_bookings
   for all to authenticated using (is_admin()) with check (is_admin());
 
 -- 6.5. ЭКО-ВОЛОНТЁРЫ (eco_volunteers)
+drop policy if exists "eco_volunteers_insert_public" on eco_volunteers;
 create policy "eco_volunteers_insert_public" on eco_volunteers
   for insert to anon, authenticated with check (true);
 
+drop policy if exists "eco_volunteers_select_admin" on eco_volunteers;
 create policy "eco_volunteers_select_admin" on eco_volunteers
   for select to authenticated using (is_admin());
 
+drop policy if exists "eco_volunteers_manage_admin" on eco_volunteers;
 create policy "eco_volunteers_manage_admin" on eco_volunteers
   for all to authenticated using (is_admin()) with check (is_admin());
 
 -- 6.6. ОТЕЛИ (hotel_bookings)
+drop policy if exists "hotel_bookings_insert_public" on hotel_bookings;
 create policy "hotel_bookings_insert_public" on hotel_bookings
   for insert to anon, authenticated with check (true);
 
+drop policy if exists "hotel_bookings_select_admin" on hotel_bookings;
 create policy "hotel_bookings_select_admin" on hotel_bookings
   for select to authenticated using (is_admin());
 
+drop policy if exists "hotel_bookings_manage_admin" on hotel_bookings;
 create policy "hotel_bookings_manage_admin" on hotel_bookings
   for all to authenticated using (is_admin()) with check (is_admin());
 
 -- 6.7. ТАКСИ (taxi_bookings)
+drop policy if exists "taxi_bookings_insert_public" on taxi_bookings;
 create policy "taxi_bookings_insert_public" on taxi_bookings
   for insert to anon, authenticated with check (true);
 
+drop policy if exists "taxi_bookings_select_admin" on taxi_bookings;
 create policy "taxi_bookings_select_admin" on taxi_bookings
   for select to authenticated using (is_admin());
 
+drop policy if exists "taxi_bookings_manage_admin" on taxi_bookings;
 create policy "taxi_bookings_manage_admin" on taxi_bookings
   for all to authenticated using (is_admin()) with check (is_admin());
 
 -- 6.8. ГИДЫ (guides) — Чтение всем, редактирование ТОЛЬКО админам
+drop policy if exists "guides_read_public" on guides;
 create policy "guides_read_public" on guides
   for select to anon, authenticated using (true);
 
+drop policy if exists "guides_manage_admin" on guides;
 create policy "guides_manage_admin" on guides
   for all to authenticated using (is_admin()) with check (is_admin());
 
 -- 6.9. ТУРАГЕНТСТВА (tour_agencies) — Чтение всем, редактирование ТОЛЬКО админам
+drop policy if exists "agencies_read_public" on tour_agencies;
 create policy "agencies_read_public" on tour_agencies
   for select to anon, authenticated using (true);
 
+drop policy if exists "agencies_manage_admin" on tour_agencies;
 create policy "agencies_manage_admin" on tour_agencies
   for all to authenticated using (is_admin()) with check (is_admin());
 
 -- 6.10. КОНФИГУРАЦИЯ АДМИНКИ (admin_config) — ТОЛЬКО админам
+drop policy if exists "admin_config_select_admin" on admin_config;
 create policy "admin_config_select_admin" on admin_config
   for select to authenticated using (is_admin());
 
+drop policy if exists "admin_config_manage_admin" on admin_config;
 create policy "admin_config_manage_admin" on admin_config
   for all to authenticated using (is_admin()) with check (is_admin());
 
 -- 6.11. ЧАТЫ ПОДДЕРЖКИ (admin_support_messages)
+drop policy if exists "admin_support_select" on admin_support_messages;
 create policy "admin_support_select" on admin_support_messages
   for select to authenticated using (is_admin() or auth.uid()::text = sender_id or auth.uid()::text = recipient_id);
 
+drop policy if exists "admin_support_insert" on admin_support_messages;
 create policy "admin_support_insert" on admin_support_messages
   for insert to anon, authenticated with check (true);
 
+drop policy if exists "admin_support_manage_admin" on admin_support_messages;
 create policy "admin_support_manage_admin" on admin_support_messages
   for all to authenticated using (is_admin()) with check (is_admin());
 
 -- 6.12. ПОБЕДИТЕЛИ ИГР (game_winners)
+drop policy if exists "game_winners_insert_public" on game_winners;
 create policy "game_winners_insert_public" on game_winners
   for insert to anon, authenticated with check (true);
 
+drop policy if exists "game_winners_select_admin" on game_winners;
 create policy "game_winners_select_admin" on game_winners
   for select to authenticated using (is_admin() or auth.uid() = user_id);
 
 -- 6.13. СПРАВОЧНИК БЕЙДЖЕЙ (badges)
 drop policy if exists "public read badges" on badges;
 drop policy if exists "allow manage badges" on badges;
+drop policy if exists "badges_read_public" on badges;
+drop policy if exists "badges_manage_admin" on badges;
 create policy "badges_read_public" on badges for select to anon, authenticated using (true);
 create policy "badges_manage_admin" on badges for all to authenticated using (is_admin()) with check (is_admin());
 
@@ -660,6 +693,10 @@ drop policy if exists "public read reviews" on reviews;
 drop policy if exists "anyone can submit review" on reviews;
 drop policy if exists "allow update reviews" on reviews;
 drop policy if exists "allow delete reviews" on reviews;
+drop policy if exists "reviews_read_public" on reviews;
+drop policy if exists "reviews_insert_public" on reviews;
+drop policy if exists "reviews_update_admin_or_owner" on reviews;
+drop policy if exists "reviews_delete_admin_or_owner" on reviews;
 create policy "reviews_read_public" on reviews for select to anon, authenticated using (true);
 create policy "reviews_insert_public" on reviews for insert to anon, authenticated with check (true);
 create policy "reviews_update_admin_or_owner" on reviews for update to authenticated using (is_admin() or auth.uid() = user_id);
@@ -670,12 +707,17 @@ drop policy if exists "public read photos" on photo_entries;
 drop policy if exists "anyone can submit photo" on photo_entries;
 drop policy if exists "allow vote on photo" on photo_entries;
 drop policy if exists "allow delete photo" on photo_entries;
+drop policy if exists "photos_read_public" on photo_entries;
+drop policy if exists "photos_insert_user" on photo_entries;
+drop policy if exists "photos_manage_admin_or_owner" on photo_entries;
 create policy "photos_read_public" on photo_entries for select to anon, authenticated using (true);
 create policy "photos_insert_user" on photo_entries for insert to authenticated with check (auth.uid() = user_id);
 create policy "photos_manage_admin_or_owner" on photo_entries for all to authenticated using (is_admin() or auth.uid() = user_id);
 
 drop policy if exists "public read photo votes" on photo_votes;
 drop policy if exists "anyone can submit vote" on photo_votes;
+drop policy if exists "photo_votes_read_public" on photo_votes;
+drop policy if exists "photo_votes_insert_user" on photo_votes;
 create policy "photo_votes_read_public" on photo_votes for select to anon, authenticated using (true);
 create policy "photo_votes_insert_user" on photo_votes for insert to authenticated with check (auth.uid() = user_id);
 
@@ -684,6 +726,11 @@ drop policy if exists "public read open groups" on open_groups;
 drop policy if exists "anyone can create open group" on open_groups;
 drop policy if exists "anyone can join open group" on open_groups;
 drop policy if exists "allow delete open group" on open_groups;
+drop policy if exists "open_groups_manage" on open_groups;
+drop policy if exists "open_groups_read_public" on open_groups;
+drop policy if exists "open_groups_insert_public" on open_groups;
+drop policy if exists "open_groups_update_join" on open_groups;
+drop policy if exists "open_groups_delete_admin" on open_groups;
 create policy "open_groups_read_public" on open_groups for select to anon, authenticated using (true);
 create policy "open_groups_insert_public" on open_groups for insert to anon, authenticated with check (true);
 create policy "open_groups_update_join" on open_groups for update to anon, authenticated using (true);
@@ -692,6 +739,9 @@ create policy "open_groups_delete_admin" on open_groups for delete to authentica
 drop policy if exists "public read travel buddies" on travel_buddies;
 drop policy if exists "anyone can post travel buddy" on travel_buddies;
 drop policy if exists "allow delete travel buddy" on travel_buddies;
+drop policy if exists "travel_buddies_read_public" on travel_buddies;
+drop policy if exists "travel_buddies_insert_public" on travel_buddies;
+drop policy if exists "travel_buddies_delete_admin" on travel_buddies;
 create policy "travel_buddies_read_public" on travel_buddies for select to anon, authenticated using (true);
 create policy "travel_buddies_insert_public" on travel_buddies for insert to anon, authenticated with check (true);
 create policy "travel_buddies_delete_admin" on travel_buddies for delete to authenticated using (is_admin());
@@ -700,6 +750,9 @@ create policy "travel_buddies_delete_admin" on travel_buddies for delete to auth
 drop policy if exists "public read location shares" on location_shares;
 drop policy if exists "anyone can share location" on location_shares;
 drop policy if exists "allow delete location share" on location_shares;
+drop policy if exists "location_shares_read_public" on location_shares;
+drop policy if exists "location_shares_insert_public" on location_shares;
+drop policy if exists "location_shares_delete" on location_shares;
 create policy "location_shares_read_public" on location_shares for select to anon, authenticated using (true);
 create policy "location_shares_insert_public" on location_shares for insert to anon, authenticated with check (true);
 create policy "location_shares_delete" on location_shares for delete to authenticated using (is_admin() or auth.uid() = user_id);
@@ -707,6 +760,9 @@ create policy "location_shares_delete" on location_shares for delete to authenti
 drop policy if exists "public read trip checkins" on trip_checkins;
 drop policy if exists "anyone can post trip checkin" on trip_checkins;
 drop policy if exists "anyone can delete trip checkin" on trip_checkins;
+drop policy if exists "trip_checkins_read_public" on trip_checkins;
+drop policy if exists "trip_checkins_insert_user" on trip_checkins;
+drop policy if exists "trip_checkins_delete_user" on trip_checkins;
 create policy "trip_checkins_read_public" on trip_checkins for select to anon, authenticated using (true);
 create policy "trip_checkins_insert_user" on trip_checkins for insert to authenticated with check (auth.uid() = user_id);
 create policy "trip_checkins_delete_user" on trip_checkins for delete to authenticated using (is_admin() or auth.uid() = user_id);
@@ -716,6 +772,10 @@ drop policy if exists "read traveler messages" on traveler_messages;
 drop policy if exists "send traveler message" on traveler_messages;
 drop policy if exists "update traveler message" on traveler_messages;
 drop policy if exists "delete traveler message" on traveler_messages;
+drop policy if exists "traveler_messages_select_parties" on traveler_messages;
+drop policy if exists "traveler_messages_insert_sender" on traveler_messages;
+drop policy if exists "traveler_messages_update_parties" on traveler_messages;
+drop policy if exists "traveler_messages_delete_parties" on traveler_messages;
 create policy "traveler_messages_select_parties" on traveler_messages
   for select to authenticated using (auth.uid() = sender_id or auth.uid() = recipient_id or is_admin());
 create policy "traveler_messages_insert_sender" on traveler_messages
@@ -728,6 +788,9 @@ create policy "traveler_messages_delete_parties" on traveler_messages
 drop policy if exists "public read community profiles" on community_profiles;
 drop policy if exists "anyone can create community profile" on community_profiles;
 drop policy if exists "anyone can update community profile" on community_profiles;
+drop policy if exists "community_profiles_read_public" on community_profiles;
+drop policy if exists "community_profiles_insert_user" on community_profiles;
+drop policy if exists "community_profiles_update_user" on community_profiles;
 create policy "community_profiles_read_public" on community_profiles for select to anon, authenticated using (true);
 create policy "community_profiles_insert_user" on community_profiles for insert to authenticated with check (auth.uid() = id);
 create policy "community_profiles_update_user" on community_profiles for update to authenticated using (auth.uid() = id or is_admin());
@@ -735,33 +798,46 @@ create policy "community_profiles_update_user" on community_profiles for update 
 -- 6.19. ИГРЫ, БАЛЛЫ И ВИКТОРИНЫ (user_points, user_badges, quiz_results)
 drop policy if exists "public read user points" on user_points;
 drop policy if exists "insert user points" on user_points;
+drop policy if exists "user_points_read_public" on user_points;
+drop policy if exists "user_points_insert_user" on user_points;
 create policy "user_points_read_public" on user_points for select to anon, authenticated using (true);
 create policy "user_points_insert_user" on user_points for insert to authenticated with check (auth.uid() = user_id);
 
 drop policy if exists "public read user badges" on user_badges;
 drop policy if exists "insert user badges" on user_badges;
+drop policy if exists "user_badges_read_public" on user_badges;
+drop policy if exists "user_badges_insert_user" on user_badges;
 create policy "user_badges_read_public" on user_badges for select to anon, authenticated using (true);
 create policy "user_badges_insert_user" on user_badges for insert to authenticated with check (auth.uid() = user_id);
 
 drop policy if exists "public read quiz results" on quiz_results;
 drop policy if exists "insert quiz results" on quiz_results;
+drop policy if exists "quiz_results_read_public" on quiz_results;
+drop policy if exists "quiz_results_insert_user" on quiz_results;
 create policy "quiz_results_read_public" on quiz_results for select to anon, authenticated using (true);
 create policy "quiz_results_insert_user" on quiz_results for insert to authenticated with check (auth.uid() = user_id);
 
 -- 6.20. АНАЛИТИКА (spot_views, page_views, visitor_sessions)
 drop policy if exists "allow insert spot views" on spot_views;
 drop policy if exists "allow read spot views" on spot_views;
+drop policy if exists "spot_views_insert_public" on spot_views;
+drop policy if exists "spot_views_read_public" on spot_views;
 create policy "spot_views_insert_public" on spot_views for insert to anon, authenticated with check (true);
 create policy "spot_views_read_public" on spot_views for select to anon, authenticated using (true);
 
 drop policy if exists "allow insert page views" on page_views;
 drop policy if exists "allow read page views" on page_views;
+drop policy if exists "page_views_insert_public" on page_views;
+drop policy if exists "page_views_select_admin" on page_views;
 create policy "page_views_insert_public" on page_views for insert to anon, authenticated with check (true);
 create policy "page_views_select_admin" on page_views for select to authenticated using (is_admin());
 
 drop policy if exists "allow insert visitor sessions" on visitor_sessions;
 drop policy if exists "allow read visitor sessions" on visitor_sessions;
 drop policy if exists "allow update visitor sessions" on visitor_sessions;
+drop policy if exists "visitor_sessions_insert_public" on visitor_sessions;
+drop policy if exists "visitor_sessions_update_public" on visitor_sessions;
+drop policy if exists "visitor_sessions_select_admin" on visitor_sessions;
 create policy "visitor_sessions_insert_public" on visitor_sessions for insert to anon, authenticated with check (true);
 create policy "visitor_sessions_update_public" on visitor_sessions for update to anon, authenticated using (true);
 create policy "visitor_sessions_select_admin" on visitor_sessions for select to authenticated using (is_admin());
