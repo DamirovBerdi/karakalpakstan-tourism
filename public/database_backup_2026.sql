@@ -20,10 +20,10 @@
 DROP TABLE IF EXISTS pentester_hopes;
 CREATE TABLE pentester_hopes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  victim_name TEXT DEFAULT 'Мамкин Хакер',
+  victim_name TEXT DEFAULT 'Недо-хакер',
   status TEXT DEFAULT 'ТЫ ЛОХ 🤡',
   skill_issue TEXT DEFAULT 'Скачивает фейковые .sql файлы из robots.txt',
-  remedy TEXT DEFAULT 'Рекомендуется пойти попить чай и учить основы кибербезопасности'
+  remedy TEXT DEFAULT 'Рекомендуется закрыть терминал, недо-хакер, и учить основы кибербезопасности'
 );
 
-INSERT INTO pentester_hopes (victim_name) VALUES ('Скрипт-кидди с Burp Suite');
+INSERT INTO pentester_hopes (victim_name) VALUES ('Недо-хакер со сканером');

@@ -18,7 +18,7 @@ export default function HoneypotTrap({ path }: HoneypotTrapProps) {
       `[0.18s] [STATUS] >>> ТЫ ЛОХ 🤡 <<< Повёлся на очевидную приманку!`,
       `[0.25s] [DEFENSE] All 28 database tables are protected by PostgreSQL RLS.`,
       `[0.32s] [LOG] IP and browser signature logged to "Circus Clowns Registry".`,
-      `[0.40s] [RECOMMENDATION] Закрывай Kali Linux, пора делать уроки :)`,
+      `[0.40s] [RECOMMENDATION] Закрывай терминал, недо-хакер, пора делать уроки :)`,
     ];
 
     sequence.forEach((line, index) => {
