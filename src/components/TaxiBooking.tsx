@@ -62,11 +62,12 @@ export default function TaxiBooking() {
 
     trackServiceUsage('taxi', `booking: ${form.pickup} → ${form.dropoff}`).catch(() => {});
 
-    const travelDatetime = `${form.date}T${form.time}:00`;
+    const trackingId = `#SK-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    const { data, error: insertError } = await supabase
+    const { error: insertError } = await supabase
       .from('taxi_bookings')
       .insert({
+        tracking_id: trackingId,
         tourist_name: form.touristName.trim(),
         email: form.email.trim(),
         phone: form.phone.trim(),
@@ -78,17 +79,15 @@ export default function TaxiBooking() {
         language: lang,
         is_test_mode: false,
         commission_rate: 0,
-      })
-      .select('tracking_id')
-      .single();
+      });
 
-    if (insertError || !data) {
+    if (insertError) {
       setError(t('taxi.error'));
       setSubmitting(false);
       return;
     }
 
-    setSuccess({ trackingId: data.tracking_id });
+    setSuccess({ trackingId });
     setSubmitting(false);
     setForm({
       touristName: '', email: '', phone: '', pickup: '', dropoff: '',

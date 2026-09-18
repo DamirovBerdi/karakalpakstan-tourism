@@ -89,9 +89,12 @@ export default function Hotels() {
 
     const totalPrice = selectedRoom.pricePerNight * nights;
 
-    const { data, error: insertError } = await supabase
+    const trackingId = `#SK-H${Math.floor(10000 + Math.random() * 90000)}`;
+
+    const { error: insertError } = await supabase
       .from('hotel_bookings')
       .insert({
+        tracking_id: trackingId,
         hotel_name: selectedHotel.name,
         room_type: selectedRoom.name,
         guest_name: form.guestName.trim(),
@@ -107,17 +110,15 @@ export default function Hotels() {
         notes: form.notes.trim(),
         is_test_mode: false,
         commission_rate: 0,
-      })
-      .select('tracking_id')
-      .single();
+      });
 
-    if (insertError || !data) {
+    if (insertError) {
       setError(t('hotel.error'));
       setSubmitting(false);
       return;
     }
 
-    setSuccess({ trackingId: data.tracking_id, nights, totalPrice });
+    setSuccess({ trackingId, nights, totalPrice });
     setSubmitting(false);
   };
 
