@@ -1,0 +1,17 @@
+# ==============================================================================
+# Robots.txt - Karakalpakstan Tourism Portal
+# ==============================================================================
+
+User-agent: *
+Allow: /
+
+# ATTENTION PENTESTERS: DO NOT PROBE PRIVATE BACKUPS OR ADMIN ACCESS!
+Disallow: /admin-secret-backup.env
+Disallow: /database_backup_2026.sql
+Disallow: /admin-panel-bypass
+Disallow: /api/v1/internal-backdoor
+Disallow: /wp-login.php
+Disallow: /phpmyadmin
+Disallow: /cpanel
+Disallow: /shell
+Disallow: /server-status

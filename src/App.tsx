@@ -43,6 +43,19 @@ const CurrencyConverter = lazy(() => import('@/components/CurrencyConverter'));
 const ChatBot = lazy(() => import('@/components/ChatBot'));
 const AdminDashboard = lazy(() => import('@/components/AdminDashboard'));
 
+const HoneypotTrap = lazy(() => import('@/components/HoneypotTrap'));
+
+const HONEYPOT_PATHS = [
+  '/admin-panel-bypass',
+  '/api/v1/internal-backdoor',
+  '/wp-login.php',
+  '/phpmyadmin',
+  '/cpanel',
+  '/shell',
+  '/backup.sql',
+  '/.env',
+];
+
 function SectionLoader() {
   return (
     <div className="flex items-center justify-center py-12">
@@ -63,12 +76,22 @@ function usePathname() {
 
 function App() {
   const pathname = usePathname();
+  const normalizedPath = pathname.toLowerCase();
+  const isHoneypot = HONEYPOT_PATHS.some((p) => normalizedPath === p || normalizedPath.startsWith(`${p}/`));
 
   useEffect(() => {
-    if (pathname !== '/admin') {
+    if (pathname !== '/admin' && !isHoneypot) {
       initVisitorTracking();
     }
-  }, [pathname]);
+  }, [pathname, isHoneypot]);
+
+  if (isHoneypot) {
+    return (
+      <Suspense fallback={<SectionLoader />}>
+        <HoneypotTrap path={pathname} />
+      </Suspense>
+    );
+  }
 
   if (pathname === '/admin') {
     return (
