@@ -222,20 +222,6 @@ export default function AdminDashboard() {
   const [loggingIn, setLoggingIn] = useState(false);
   const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null);
 
-  const performSuperAdminLogin = (acc: typeof SUPER_ADMIN_ACCOUNTS[0]) => {
-    const info: AdminInfo = { username: acc.username, role: acc.role, displayName: acc.displayName };
-    sessionStorage.setItem('admin_authed', 'true');
-    sessionStorage.setItem('admin_info', JSON.stringify(info));
-    setAdminInfo(info);
-    setAuthed(true);
-
-    // Save to DB in background
-    supabase.from('admin_config').upsert([
-      { key: `superadmin_${acc.username}`, value: JSON.stringify(info), updated_at: new Date().toISOString() },
-      { key: 'active_super_admins', value: JSON.stringify(['azada122321', 'damir122321']), updated_at: new Date().toISOString() },
-    ]).then(() => {});
-  };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim() || !password.trim()) return;
@@ -244,44 +230,80 @@ export default function AdminDashboard() {
 
     const uInput = username.trim();
     const pInput = password.trim();
-    const pHash = await hashPassword(pInput);
+    const targetEmail = uInput.includes('@') ? uInput : `${uInput.toLowerCase()}@karakalpak.travel`;
 
-    // 1. Check Super Admin accounts by cryptographic hash
-    const superMatch = SUPER_ADMIN_ACCOUNTS.find(
-      (acc) => acc.username.toLowerCase() === uInput.toLowerCase() && acc.passwordHash === pHash
-    );
+    try {
+      // 1. Authenticate with Supabase Auth (cryptographically verified server-side JWT session)
+      let { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: targetEmail,
+        password: pInput,
+      });
 
-    if (superMatch) {
-      performSuperAdminLogin(superMatch);
-      setLoggingIn(false);
-      return;
-    }
+      // If account not yet registered in Supabase Auth, verify super admin credentials and auto-provision
+      if (authError && (uInput.toLowerCase() === 'azada122321' || uInput.toLowerCase() === 'damir122321')) {
+        const pHash = await hashPassword(pInput);
+        const superMatch = SUPER_ADMIN_ACCOUNTS.find(
+          (acc) => acc.username.toLowerCase() === uInput.toLowerCase() && acc.passwordHash === pHash
+        );
+        if (superMatch) {
+          const signUpRes = await supabase.auth.signUp({
+            email: targetEmail,
+            password: pInput,
+          });
+          if (signUpRes.data.session) {
+            authData = signUpRes.data;
+            authError = null;
+          } else {
+            const retryRes = await supabase.auth.signInWithPassword({
+              email: targetEmail,
+              password: pInput,
+            });
+            authData = retryRes.data;
+            authError = retryRes.error;
+          }
+        }
+      }
 
-    // 2. Check DB admin_config fallback
-    const [userRes, passRes] = await Promise.all([
-      supabase.from('admin_config').select('value').eq('key', 'admin_username').maybeSingle(),
-      supabase.from('admin_config').select('value').eq('key', 'admin_password_hash').maybeSingle(),
-    ]);
-
-    if (!userRes.error && !passRes.error && userRes.data && passRes.data) {
-      if (uInput === userRes.data.value && pInput === passRes.data.value) {
-        const info: AdminInfo = { username: uInput, role: 'Admin', displayName: uInput };
-        sessionStorage.setItem('admin_authed', 'true');
-        sessionStorage.setItem('admin_info', JSON.stringify(info));
+      if (!authError && authData?.session) {
+        const isSuper = targetEmail.includes('azada122321') || targetEmail.includes('damir122321') || targetEmail.endsWith('@karakalpak.travel');
+        const info: AdminInfo = {
+          username: uInput,
+          role: isSuper ? 'Super Admin' : 'Admin',
+          displayName: uInput.includes('damir') ? 'Damir' : (uInput.includes('azada') ? 'Azada' : uInput),
+        };
         setAdminInfo(info);
         setAuthed(true);
         setLoggingIn(false);
         return;
       }
-    }
 
-    setLoginError('Invalid username or password.');
-    setLoggingIn(false);
+      // 2. Offline fallback check for Super Admin
+      const pHash = await hashPassword(pInput);
+      const superMatch = SUPER_ADMIN_ACCOUNTS.find(
+        (acc) => acc.username.toLowerCase() === uInput.toLowerCase() && acc.passwordHash === pHash
+      );
+      if (superMatch) {
+        const info: AdminInfo = { username: superMatch.username, role: superMatch.role, displayName: superMatch.displayName };
+        setAdminInfo(info);
+        setAuthed(true);
+        setLoggingIn(false);
+        return;
+      }
+
+      setLoginError('Неверный логин или пароль администратора.');
+    } catch {
+      setLoginError('Ошибка подключения к серверу авторизации.');
+    } finally {
+      setLoggingIn(false);
+    }
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('admin_authed');
-    sessionStorage.removeItem('admin_info');
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // ignore
+    }
     setAuthed(false);
     setAdminInfo(null);
     setUsername('');
@@ -289,15 +311,29 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    if (sessionStorage.getItem('admin_authed') === 'true') {
-      const savedInfo = sessionStorage.getItem('admin_info');
-      if (savedInfo) {
-        try { setAdminInfo(JSON.parse(savedInfo)); } catch {}
-      } else {
-        setAdminInfo({ username: 'azada122321', role: 'Super Admin', displayName: 'Azada' });
+    let mounted = true;
+    async function verifyBackendSession() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user && mounted) {
+          const email = session.user.email ?? '';
+          const isSuper = email.includes('azada122321') || email.includes('damir122321') || email.endsWith('@karakalpak.travel');
+          if (isSuper) {
+            setAdminInfo({
+              username: email.split('@')[0],
+              role: 'Super Admin',
+              displayName: email.includes('damir') ? 'Damir' : 'Azada',
+            });
+            setAuthed(true);
+            return;
+          }
+        }
+      } catch {
+        // ignore
       }
-      setAuthed(true);
     }
+    verifyBackendSession();
+    return () => { mounted = false; };
   }, []);
 
   if (!authed) {

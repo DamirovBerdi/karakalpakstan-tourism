@@ -71,7 +71,7 @@ Deno.serve(async (req: Request) => {
         body: JSON.stringify({
           model: "tts-1",
           voice: "nova",
-          input: text.slice(0, 4096),
+          input: text.slice(0, 500),
           response_format: "mp3",
         }),
       });
@@ -104,7 +104,13 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const chatMessages: Message[] = [{ role: "system", content: SYSTEM_PROMPT }, ...messages];
+    // Sanitize and cap conversation depth (max 8 messages, max 1000 chars each) to prevent token abuse
+    const sanitizedMessages: Message[] = messages.slice(-8).map((m) => ({
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: String(m.content || "").slice(0, 1000),
+    }));
+
+    const chatMessages: Message[] = [{ role: "system", content: SYSTEM_PROMPT }, ...sanitizedMessages];
 
     const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
