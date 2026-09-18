@@ -63,6 +63,7 @@ export default function TaxiBooking() {
     trackServiceUsage('taxi', `booking: ${form.pickup} → ${form.dropoff}`).catch(() => {});
 
     const trackingId = `#SK-${Math.floor(1000 + Math.random() * 9000)}`;
+    const travelDatetime = `${form.date}T${form.time}:00`;
 
     const { error: insertError } = await supabase
       .from('taxi_bookings')

@@ -210,6 +210,42 @@ export default function Navbar() {
       {/* Mobile Drawer */}
       {mobileOpen && (
         <div className="lg:hidden bg-ink-900/98 backdrop-blur-md animate-fade-in max-h-[85vh] overflow-y-auto scrollbar-none border-t border-white/10 px-4 py-4">
+          {/* Mobile Auth Bar */}
+          <div className="mb-4 pb-3 border-b border-white/10 sm:hidden">
+            {user ? (
+              <div className="flex items-center justify-between">
+                <a
+                  href="#community"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2 text-sm font-semibold text-white/90 hover:text-gold-300"
+                >
+                  <UserIcon className="h-4 w-4 text-gold-400" />
+                  <span>{profile?.username ?? 'Profile'}</span>
+                </a>
+                <button
+                  onClick={() => {
+                    signOut();
+                    setMobileOpen(false);
+                  }}
+                  className="flex items-center gap-1.5 text-xs text-white/70 hover:text-red-400 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign out</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  setMobileOpen(false);
+                  setAuthOpen(true);
+                }}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-garnet-500 py-2.5 text-xs font-bold text-white transition-colors hover:bg-garnet-600 shadow-sm"
+              >
+                <LogIn className="h-4 w-4" />
+                <span>{t('auth.signInBtn')}</span>
+              </button>
+            )}
+          </div>
           <div className="space-y-4">
             {CATEGORIZED_NAV.map((cat) => (
               <div key={cat.titleKey}>

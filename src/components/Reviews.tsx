@@ -62,7 +62,7 @@ const INITIAL_REVIEWS: Review[] = [
 
 export default function Reviews() {
   const { t } = useLang();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -115,7 +115,7 @@ export default function Reviews() {
         category: isPostTrip ? 'post_trip' : 'place',
         target_id: selectedPlace.id,
         target_name: selectedPlace.name,
-        author_name: user.email ? user.email.split('@')[0] : 'Путешественник',
+        author_name: profile?.username || (user.email ? user.email.split('@')[0] : 'Путешественник'),
         country: null,
         title: '',
         is_verified_trip: isPostTrip,
