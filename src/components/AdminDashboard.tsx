@@ -234,13 +234,16 @@ export default function AdminDashboard() {
 
     try {
       // 1. Authenticate with Supabase Auth (cryptographically verified server-side JWT session)
-      let { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: targetEmail,
         password: pInput,
       });
 
+      let currentSession = signInData?.session;
+      let hasAuthError = !!signInError;
+
       // If account not yet registered in Supabase Auth, verify super admin credentials and auto-provision
-      if (authError && (uInput.toLowerCase() === 'azada122321' || uInput.toLowerCase() === 'damir122321')) {
+      if (hasAuthError && (uInput.toLowerCase() === 'azada122321' || uInput.toLowerCase() === 'damir122321')) {
         const pHash = await hashPassword(pInput);
         const superMatch = SUPER_ADMIN_ACCOUNTS.find(
           (acc) => acc.username.toLowerCase() === uInput.toLowerCase() && acc.passwordHash === pHash
@@ -250,21 +253,21 @@ export default function AdminDashboard() {
             email: targetEmail,
             password: pInput,
           });
-          if (signUpRes.data.session) {
-            authData = signUpRes.data;
-            authError = null;
+          if (signUpRes.data?.session) {
+            currentSession = signUpRes.data.session;
+            hasAuthError = false;
           } else {
             const retryRes = await supabase.auth.signInWithPassword({
               email: targetEmail,
               password: pInput,
             });
-            authData = retryRes.data;
-            authError = retryRes.error;
+            currentSession = retryRes.data?.session;
+            hasAuthError = !!retryRes.error;
           }
         }
       }
 
-      if (!authError && authData?.session) {
+      if (!hasAuthError && currentSession) {
         const isSuper = targetEmail.includes('azada122321') || targetEmail.includes('damir122321') || targetEmail.endsWith('@karakalpak.travel');
         const info: AdminInfo = {
           username: uInput,
