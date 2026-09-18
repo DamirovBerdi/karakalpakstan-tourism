@@ -64,6 +64,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Let Vite hashed immutable assets load directly through browser HTTP cache
+  if (url.pathname.startsWith('/assets/')) {
+    return;
+  }
+
   event.respondWith(
     caches.open(CACHE_NAME).then(async (cache) => {
       const cachedResponse = await cache.match(event.request);

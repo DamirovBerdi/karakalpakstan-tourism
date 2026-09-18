@@ -29,7 +29,7 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
     const passVal = password.trim();
 
     if (mode === 'signin') {
-      const targetEmail = inputVal.includes('@') ? inputVal : `${inputVal}@karakalpak.travel`;
+      const targetEmail = inputVal.includes('@') ? inputVal : `${inputVal.toLowerCase()}@karakalpak.travel`;
       const { error } = await signIn(targetEmail, passVal);
       if (error) setError(error);
       else onClose();
@@ -39,8 +39,12 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
         setLoading(false);
         return;
       }
-      const targetEmail = inputVal.includes('@') ? inputVal : `${inputVal}@karakalpak.travel`;
-      const { error } = await signUp(targetEmail, passVal, username.trim());
+      if (!inputVal.includes('@') || !inputVal.includes('.')) {
+        setError('Пожалуйста, введите корректный Email (например, name@gmail.com)');
+        setLoading(false);
+        return;
+      }
+      const { error } = await signUp(inputVal, passVal, username.trim());
       if (error) setError(error);
       else onClose();
     }
@@ -101,16 +105,18 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-deepblue-700 mb-1">Email or Username</label>
+            <label className="block text-sm font-medium text-deepblue-700 mb-1">
+              {mode === 'signup' ? 'Email (электронная почта)' : 'Email or Username'}
+            </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-deepblue-400" />
               <input
-                type="text"
+                type={mode === 'signup' ? 'email' : 'text'}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full rounded-xl border border-sand-300 bg-sand-50 py-2.5 pl-10 pr-3 text-sm text-deepblue-900 outline-none transition-colors focus:border-deepblue-500 focus:bg-white"
-                placeholder="you@example.com or username"
+                placeholder={mode === 'signup' ? 'you@example.com' : 'you@example.com or username'}
               />
             </div>
           </div>
