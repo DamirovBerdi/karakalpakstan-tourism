@@ -16,7 +16,8 @@ const TOP_LINKS = [
 
 const CATEGORIZED_NAV = [
   {
-    title: '🏛 Наследие & Культура',
+    icon: '🏛',
+    titleKey: 'nav.catHeritage',
     links: [
       { key: 'nav.virtual', href: '#virtual' },
       { key: 'nav.museums', href: '#museums' },
@@ -26,7 +27,8 @@ const CATEGORIZED_NAV = [
     ],
   },
   {
-    title: '🗺 Туры & Поездки',
+    icon: '🗺',
+    titleKey: 'nav.catTours',
     links: [
       { key: 'nav.tours', href: '#tours' },
       { key: 'nav.buddy', href: '#buddy' },
@@ -37,7 +39,8 @@ const CATEGORIZED_NAV = [
     ],
   },
   {
-    title: '🚕 Навигация & Сервисы',
+    icon: '🚕',
+    titleKey: 'nav.catServices',
     links: [
       { key: 'nav.gps', href: '#gps-map' },
       { key: 'nav.around', href: '#around' },
@@ -48,7 +51,8 @@ const CATEGORIZED_NAV = [
     ],
   },
   {
-    title: '🏆 Развлечения & Сообщество',
+    icon: '🏆',
+    titleKey: 'nav.catCommunity',
     links: [
       { key: 'nav.reviews', href: '#reviews' },
       { key: 'nav.community', href: '#community' },
@@ -60,7 +64,8 @@ const CATEGORIZED_NAV = [
     ],
   },
   {
-    title: '🧰 Инструменты & Безопасность',
+    icon: '🧰',
+    titleKey: 'nav.catTools',
     links: [
       { key: 'nav.essentials', href: '#essentials' },
       { key: 'nav.plan', href: '#plan' },
@@ -117,35 +122,38 @@ export default function Navbar() {
         </a>
 
         {/* Desktop Primary Nav & Mega Dropdown */}
-        <div className="hidden lg:flex items-center gap-5 shrink-0">
-          {TOP_LINKS.map((link) => (
+        <div className="hidden lg:flex items-center gap-3 xl:gap-5 shrink-0">
+          {TOP_LINKS.map((link, idx) => (
             <a
               key={link.key}
               href={link.href}
-              className="text-sm font-medium text-white/90 transition-colors hover:text-gold-300"
+              className={`text-sm font-medium text-white/90 transition-colors hover:text-gold-300 whitespace-nowrap ${
+                idx >= 4 ? 'hidden xl:inline' : 'inline'
+              }`}
             >
               {t(link.key)}
             </a>
           ))}
 
           {/* Mega-Menu Dropdown Button */}
-          <div ref={dropdownRef} className="relative">
+          <div ref={dropdownRef} className="relative shrink-0">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/20 hover:text-gold-300"
+              className="flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 xl:px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/20 hover:text-gold-300 whitespace-nowrap"
             >
-              <Layers className="h-3.5 w-3.5" />
-              <span>Все разделы</span>
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+              <Layers className="h-3.5 w-3.5 shrink-0" />
+              <span>{t('nav.allSections')}</span>
+              <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {dropdownOpen && (
               <div className="absolute right-0 top-full mt-3 w-[720px] max-h-[80vh] overflow-y-auto rounded-2xl bg-ink-900/98 border border-white/10 p-6 shadow-2xl backdrop-blur-xl z-50 animate-fade-in scrollbar-none text-white">
                 <div className="grid grid-cols-3 gap-6">
                   {CATEGORIZED_NAV.map((cat) => (
-                    <div key={cat.title} className="space-y-2">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-gold-400 border-b border-white/10 pb-1.5">
-                        {cat.title}
+                    <div key={cat.titleKey} className="space-y-2">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-gold-400 border-b border-white/10 pb-1.5 flex items-center gap-1.5">
+                        <span>{cat.icon}</span>
+                        <span>{t(cat.titleKey)}</span>
                       </h4>
                       <ul className="space-y-1.5">
                         {cat.links.map((link) => (
@@ -169,26 +177,29 @@ export default function Navbar() {
         </div>
 
         {/* Right Controls */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <LanguageSwitcher />
           {user ? (
-            <div className="hidden sm:flex items-center gap-3">
-              <a href="#community" className="flex items-center gap-1.5 text-xs font-semibold text-white/90 hover:text-gold-300">
-                <UserIcon className="h-4 w-4" />
-                {profile?.username ?? 'Profile'}
+            <div className="hidden sm:flex items-center gap-2.5 shrink-0">
+              <a href="#community" className="flex items-center gap-1.5 text-xs font-semibold text-white/90 hover:text-gold-300 whitespace-nowrap">
+                <UserIcon className="h-4 w-4 shrink-0" />
+                <span>{profile?.username ?? 'Profile'}</span>
               </a>
-              <button onClick={signOut} className="text-white/80 hover:text-gold-300 transition-colors" title="Sign out">
+              <button onClick={signOut} className="text-white/80 hover:text-gold-300 transition-colors shrink-0" title="Sign out">
                 <LogOut className="h-4 w-4" />
               </button>
             </div>
           ) : (
-            <button onClick={() => setAuthOpen(true)} className="hidden sm:flex items-center gap-1.5 rounded-lg bg-garnet-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-garnet-600">
-              <LogIn className="h-3.5 w-3.5" /> {t('auth.signInBtn')}
+            <button
+              onClick={() => setAuthOpen(true)}
+              className="hidden sm:flex items-center gap-1.5 rounded-lg bg-garnet-500 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-garnet-600 shrink-0 whitespace-nowrap shadow-sm"
+            >
+              <LogIn className="h-3.5 w-3.5 shrink-0" /> <span>{t('auth.signInBtn')}</span>
             </button>
           )}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="lg:hidden rounded-lg p-2 text-white hover:bg-white/10"
+            className="lg:hidden rounded-lg p-2 text-white hover:bg-white/10 shrink-0"
             aria-label="Toggle menu"
           >
             {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -201,8 +212,11 @@ export default function Navbar() {
         <div className="lg:hidden bg-ink-900/98 backdrop-blur-md animate-fade-in max-h-[85vh] overflow-y-auto scrollbar-none border-t border-white/10 px-4 py-4">
           <div className="space-y-4">
             {CATEGORIZED_NAV.map((cat) => (
-              <div key={cat.title}>
-                <p className="text-xs font-bold uppercase tracking-wider text-gold-400 mb-2">{cat.title}</p>
+              <div key={cat.titleKey}>
+                <p className="text-xs font-bold uppercase tracking-wider text-gold-400 mb-2 flex items-center gap-1.5">
+                  <span>{cat.icon}</span>
+                  <span>{t(cat.titleKey)}</span>
+                </p>
                 <div className="grid grid-cols-2 gap-2">
                   {cat.links.map((link) => (
                     <a

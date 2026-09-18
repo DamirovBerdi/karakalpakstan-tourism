@@ -21,15 +21,16 @@ export default function LanguageSwitcher() {
   const current = LANGUAGES.find((l) => l.code === lang)!;
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative shrink-0">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-white/10"
+        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/10 shrink-0 whitespace-nowrap"
         aria-label="Switch language"
       >
-        <Globe className="h-4 w-4" />
-        <span className="hidden sm:inline">{current.label}</span>
-        <span className="sm:hidden">{current.code.toUpperCase()}</span>
+        <Globe className="h-3.5 w-3.5 text-gold-400 shrink-0" />
+        <span className="text-sm">{current.flag}</span>
+        <span className="hidden 2xl:inline">{current.label}</span>
+        <span className="2xl:hidden font-bold">{current.code.toUpperCase()}</span>
         <ChevronDown className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (

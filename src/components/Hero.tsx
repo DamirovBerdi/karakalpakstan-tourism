@@ -68,7 +68,7 @@ export default function Hero() {
                 placeholder={t('hero.searchPlaceholder')}
                 className="w-full bg-transparent py-3 text-ink-900 placeholder-ink-400/60 focus:outline-none text-sm sm:text-base"
               />
-              <button className="flex-shrink-0 rounded-xl bg-garnet-500 px-4 sm:px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-garnet-600">
+              <button className="flex-shrink-0 rounded-xl bg-garnet-500 px-5 sm:px-7 py-3 text-sm font-bold text-white transition-colors hover:bg-garnet-600 whitespace-nowrap shadow-sm">
                 {t('hero.searchBtn')}
               </button>
             </div>
