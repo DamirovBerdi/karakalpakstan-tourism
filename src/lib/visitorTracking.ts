@@ -39,12 +39,18 @@ export async function trackPageView(opts: TrackPageOptions = {}): Promise<void> 
     tracked.push(dedupeKey);
     sessionStorage.setItem(TRACKED_KEY, JSON.stringify(tracked));
 
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/track-visitor`;
+    const rawUrl = (import.meta.env.VITE_SUPABASE_URL as string) || '';
+    const supabaseUrl = (!rawUrl || rawUrl.includes('rjstejbrmnjtvgsrinif'))
+      ? 'https://ythdfltgdvfjllgyutnz.supabase.co'
+      : rawUrl;
+    const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || 'sb_publishable_1cvvhxJMGg3E-vtqjeW04w_J1NIsNOg';
+
+    const apiUrl = `${supabaseUrl}/functions/v1/track-visitor`;
     await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        Authorization: `Bearer ${anonKey}`,
       },
       body: JSON.stringify({ sessionToken, pagePath, pageTitle, serviceUsed }),
     });
@@ -60,12 +66,18 @@ export async function trackPageView(opts: TrackPageOptions = {}): Promise<void> 
 export async function trackServiceUsage(service: string, detail?: string): Promise<void> {
   try {
     const sessionToken = getSessionToken();
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/track-visitor`;
+    const rawUrl = (import.meta.env.VITE_SUPABASE_URL as string) || '';
+    const supabaseUrl = (!rawUrl || rawUrl.includes('rjstejbrmnjtvgsrinif'))
+      ? 'https://ythdfltgdvfjllgyutnz.supabase.co'
+      : rawUrl;
+    const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || 'sb_publishable_1cvvhxJMGg3E-vtqjeW04w_J1NIsNOg';
+
+    const apiUrl = `${supabaseUrl}/functions/v1/track-visitor`;
     await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        Authorization: `Bearer ${anonKey}`,
       },
       body: JSON.stringify({
         sessionToken,
