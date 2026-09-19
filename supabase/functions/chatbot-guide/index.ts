@@ -22,6 +22,23 @@ interface Message {
   content: string;
 }
 
+// In-memory sliding window rate limiter: max 20 requests per minute per IP
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + 60_000 });
+    return false;
+  }
+  if (entry.count >= 20) {
+    return true;
+  }
+  entry.count++;
+  return false;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -32,6 +49,17 @@ Deno.serve(async (req: Request) => {
       status: 405,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+  }
+
+  const clientIp = req.headers.get("cf-connecting-ip") || req.headers.get("x-real-ip") || "anonymous";
+  if (isRateLimited(clientIp)) {
+    return new Response(
+      JSON.stringify({ error: "Rate limit exceeded. Please wait 60 seconds before sending more requests." }),
+      {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" },
+      }
+    );
   }
 
   try {

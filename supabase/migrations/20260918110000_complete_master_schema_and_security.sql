@@ -554,7 +554,7 @@ create policy "admin_users_manage_admin" on admin_users
 -- 6.2. ЗАЯВКИ НА ВИЗЫ (visa_applications) — ЗАЩИТА ПАСПОРТНЫХ ДАННЫХ
 drop policy if exists "visa_insert_public" on visa_applications;
 create policy "visa_insert_public" on visa_applications
-  for insert to anon, authenticated with check (true);
+  for insert to anon, authenticated with check (status = 'pending' or status is null);
 
 drop policy if exists "visa_select_admin" on visa_applications;
 create policy "visa_select_admin" on visa_applications
@@ -567,7 +567,7 @@ create policy "visa_manage_admin" on visa_applications
 -- 6.3. ЗАПРОСЫ ТУРИСТОВ (tourist_requests) — ЗАЩИТА ТЕЛЕФОНОВ И БЮДЖЕТОВ
 drop policy if exists "tourist_requests_insert_public" on tourist_requests;
 create policy "tourist_requests_insert_public" on tourist_requests
-  for insert to anon, authenticated with check (true);
+  for insert to anon, authenticated with check ((status = 'pending' or status is null) and group_size >= 1 and group_size <= 50);
 
 drop policy if exists "tourist_requests_select_admin" on tourist_requests;
 create policy "tourist_requests_select_admin" on tourist_requests
@@ -580,7 +580,7 @@ create policy "tourist_requests_manage_admin" on tourist_requests
 -- 6.4. БРОНИРОВАНИЕ ТУРОВ НА АРАЛ (aral_bookings)
 drop policy if exists "aral_bookings_insert_public" on aral_bookings;
 create policy "aral_bookings_insert_public" on aral_bookings
-  for insert to anon, authenticated with check (true);
+  for insert to anon, authenticated with check ((status = 'pending' or status is null) and group_size >= 1 and group_size <= 50);
 
 drop policy if exists "aral_bookings_select_admin" on aral_bookings;
 create policy "aral_bookings_select_admin" on aral_bookings
@@ -606,7 +606,13 @@ create policy "eco_volunteers_manage_admin" on eco_volunteers
 -- 6.6. ОТЕЛИ (hotel_bookings)
 drop policy if exists "hotel_bookings_insert_public" on hotel_bookings;
 create policy "hotel_bookings_insert_public" on hotel_bookings
-  for insert to anon, authenticated with check (true);
+  for insert to anon, authenticated with check (
+    (status = 'pending' or status is null) and
+    nights >= 1 and
+    guests >= 1 and
+    price_per_night >= 0 and
+    total_price >= 0
+  );
 
 drop policy if exists "hotel_bookings_select_admin" on hotel_bookings;
 create policy "hotel_bookings_select_admin" on hotel_bookings
@@ -619,7 +625,10 @@ create policy "hotel_bookings_manage_admin" on hotel_bookings
 -- 6.7. ТАКСИ (taxi_bookings)
 drop policy if exists "taxi_bookings_insert_public" on taxi_bookings;
 create policy "taxi_bookings_insert_public" on taxi_bookings
-  for insert to anon, authenticated with check (true);
+  for insert to anon, authenticated with check (
+    (status = 'pending' or status is null) and
+    passengers >= 1 and passengers <= 20
+  );
 
 drop policy if exists "taxi_bookings_select_admin" on taxi_bookings;
 create policy "taxi_bookings_select_admin" on taxi_bookings
@@ -734,7 +743,14 @@ drop policy if exists "open_groups_update_join" on open_groups;
 drop policy if exists "open_groups_update_owner_or_admin" on open_groups;
 drop policy if exists "open_groups_delete_admin" on open_groups;
 create policy "open_groups_read_public" on open_groups for select to anon, authenticated using (true);
-create policy "open_groups_insert_public" on open_groups for insert to anon, authenticated with check (true);
+create policy "open_groups_insert_public" on open_groups for insert to anon, authenticated with check (
+  (status = 'open' or status is null) and
+  max_members between 2 and 30 and
+  current_members >= 1 and
+  current_members <= max_members and
+  length(creator_name) > 0 and
+  length(creator_name) <= 100
+);
 create policy "open_groups_update_owner_or_admin" on open_groups for update to authenticated using (auth.uid() = user_id or is_admin()) with check (auth.uid() = user_id or is_admin());
 create policy "open_groups_delete_admin" on open_groups for delete to authenticated using (is_admin());
 
@@ -745,7 +761,11 @@ drop policy if exists "travel_buddies_read_public" on travel_buddies;
 drop policy if exists "travel_buddies_insert_public" on travel_buddies;
 drop policy if exists "travel_buddies_delete_admin" on travel_buddies;
 create policy "travel_buddies_read_public" on travel_buddies for select to anon, authenticated using (true);
-create policy "travel_buddies_insert_public" on travel_buddies for insert to anon, authenticated with check (true);
+create policy "travel_buddies_insert_public" on travel_buddies for insert to anon, authenticated with check (
+  (status = 'active' or status is null) and
+  length(name) > 0 and
+  length(name) <= 100
+);
 create policy "travel_buddies_delete_admin" on travel_buddies for delete to authenticated using (is_admin());
 
 -- 6.17. GPS-МЕТКИ И ЧЕК-ИНЫ (location_shares, trip_checkins)

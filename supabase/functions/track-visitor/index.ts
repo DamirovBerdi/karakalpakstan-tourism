@@ -10,21 +10,38 @@ const corsHeaders = {
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
+// In-memory rate limiting to prevent analytics flooding (max 60 events/minute per IP)
+const visitorRateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+function isTrackRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = visitorRateLimitMap.get(ip);
+  if (!entry || now > entry.resetTime) {
+    visitorRateLimitMap.set(ip, { count: 1, resetTime: now + 60_000 });
+    return false;
+  }
+  if (entry.count >= 60) {
+    return true;
+  }
+  entry.count++;
+  return false;
+}
+
 function getClientIP(req: Request): string {
   const headers = req.headers;
 
-  // Check common forwarding headers (Supabase edge runs behind a proxy)
-  const forwarded = headers.get("x-forwarded-for");
-  if (forwarded) {
-    const ips = forwarded.split(",").map((ip) => ip.trim()).filter(Boolean);
-    if (ips.length > 0) return ips[0];
-  }
+  // Prioritize Cloudflare / proxy-injected trusted headers before client-controlled ones
+  const cfConnecting = headers.get("cf-connecting-ip");
+  if (cfConnecting) return cfConnecting.trim();
 
   const realIp = headers.get("x-real-ip");
   if (realIp) return realIp.trim();
 
-  const cfConnecting = headers.get("cf-connecting-ip");
-  if (cfConnecting) return cfConnecting.trim();
+  const forwarded = headers.get("x-forwarded-for");
+  if (forwarded) {
+    const ips = forwarded.split(",").map((ip) => ip.trim()).filter(Boolean);
+    if (ips.length > 0) return ips[ips.length - 1]; // Take closest trusted upstream IP
+  }
 
   const trueClient = headers.get("true-client-ip");
   if (trueClient) return trueClient.trim();
@@ -46,6 +63,14 @@ function extractCountry(req: Request, ip: string): string {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
+  }
+
+  const ip = getClientIP(req);
+  if (isTrackRateLimited(ip)) {
+    return new Response(
+      JSON.stringify({ error: "Tracking rate limit exceeded" }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   try {
