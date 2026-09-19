@@ -14,6 +14,7 @@ export default function MiniGame() {
   const [selected, setSelected] = useState<number | null>(null);
   const [answered, setAnswered] = useState(false);
   const [score, setScore] = useState(0);
+  const [userAnswers, setUserAnswers] = useState<number[]>([]);
   const [finished, setFinished] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [winnerName, setWinnerName] = useState('');
@@ -30,6 +31,7 @@ export default function MiniGame() {
     setSelected(null);
     setAnswered(false);
     setScore(0);
+    setUserAnswers([]);
     setFinished(false);
   };
 
@@ -37,6 +39,11 @@ export default function MiniGame() {
     if (answered) return;
     setSelected(idx);
     setAnswered(true);
+    setUserAnswers((prev) => {
+      const updated = [...prev];
+      updated[currentQ] = idx;
+      return updated;
+    });
     if (idx === question.correctIndex) {
       setScore(score + 1);
     }
@@ -48,12 +55,15 @@ export default function MiniGame() {
       setFinished(true);
       setStarted(false);
 
-      if (user && score > 0) {
+      if (user && userAnswers.length > 0) {
         setSubmitting(true);
-        await supabase.rpc('submit_quiz_result', {
-          p_score: score,
-          p_total: quizQuestions.length,
-        });
+        try {
+          await supabase.rpc('submit_quiz_result', {
+            p_answers: userAnswers,
+          });
+        } catch (err) {
+          console.error('Quiz submission error:', err);
+        }
         setSubmitting(false);
       }
       if (score >= 7) {
@@ -64,7 +74,7 @@ export default function MiniGame() {
       setSelected(null);
       setAnswered(false);
     }
-  }, [currentQ, score, user]);
+  }, [currentQ, score, user, userAnswers]);
 
   const accuracy = Math.round((score / quizQuestions.length) * 100);
   const pointsEarned = score * 15;
