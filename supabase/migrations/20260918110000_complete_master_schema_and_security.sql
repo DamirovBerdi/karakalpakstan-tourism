@@ -432,12 +432,10 @@ returns boolean as $$
 begin
   return (
     auth.role() = 'authenticated' and (
-      exists (select 1 from admin_users where user_id = auth.uid()) or
-      (auth.jwt() ->> 'email') ilike '%@karakalpak.travel' or
-      (auth.jwt() ->> 'email') in (
-        'azada122321@karakalpak.travel',
-        'damir122321@karakalpak.travel',
-        'admin@karakalpak.travel'
+      exists (
+        select 1 from admin_users 
+        where user_id = auth.uid() 
+           or lower(email) = lower(auth.jwt() ->> 'email')
       )
     )
   );
@@ -673,8 +671,9 @@ create policy "admin_support_manage_admin" on admin_support_messages
 
 -- 6.12. ПОБЕДИТЕЛИ ИГР (game_winners)
 drop policy if exists "game_winners_insert_public" on game_winners;
-create policy "game_winners_insert_public" on game_winners
-  for insert to anon, authenticated with check (true);
+drop policy if exists "game_winners_insert_authenticated" on game_winners;
+create policy "game_winners_insert_authenticated" on game_winners
+  for insert to authenticated with check (auth.uid() = user_id and score >= 0 and score <= 100);
 
 drop policy if exists "game_winners_select_admin" on game_winners;
 create policy "game_winners_select_admin" on game_winners
@@ -695,10 +694,12 @@ drop policy if exists "allow update reviews" on reviews;
 drop policy if exists "allow delete reviews" on reviews;
 drop policy if exists "reviews_read_public" on reviews;
 drop policy if exists "reviews_insert_public" on reviews;
+drop policy if exists "reviews_insert_authenticated" on reviews;
 drop policy if exists "reviews_update_admin_or_owner" on reviews;
 drop policy if exists "reviews_delete_admin_or_owner" on reviews;
 create policy "reviews_read_public" on reviews for select to anon, authenticated using (true);
-create policy "reviews_insert_public" on reviews for insert to anon, authenticated with check (true);
+create policy "reviews_insert_authenticated" on reviews for insert to authenticated 
+  with check (auth.uid() = user_id and rating >= 1 and rating <= 5 and length(comment) > 0 and length(comment) <= 2000);
 create policy "reviews_update_admin_or_owner" on reviews for update to authenticated using (is_admin() or auth.uid() = user_id);
 create policy "reviews_delete_admin_or_owner" on reviews for delete to authenticated using (is_admin() or auth.uid() = user_id);
 
@@ -730,10 +731,11 @@ drop policy if exists "open_groups_manage" on open_groups;
 drop policy if exists "open_groups_read_public" on open_groups;
 drop policy if exists "open_groups_insert_public" on open_groups;
 drop policy if exists "open_groups_update_join" on open_groups;
+drop policy if exists "open_groups_update_owner_or_admin" on open_groups;
 drop policy if exists "open_groups_delete_admin" on open_groups;
 create policy "open_groups_read_public" on open_groups for select to anon, authenticated using (true);
 create policy "open_groups_insert_public" on open_groups for insert to anon, authenticated with check (true);
-create policy "open_groups_update_join" on open_groups for update to anon, authenticated using (true);
+create policy "open_groups_update_owner_or_admin" on open_groups for update to authenticated using (auth.uid() = user_id or is_admin()) with check (auth.uid() = user_id or is_admin());
 create policy "open_groups_delete_admin" on open_groups for delete to authenticated using (is_admin());
 
 drop policy if exists "public read travel buddies" on travel_buddies;
@@ -751,10 +753,12 @@ drop policy if exists "public read location shares" on location_shares;
 drop policy if exists "anyone can share location" on location_shares;
 drop policy if exists "allow delete location share" on location_shares;
 drop policy if exists "location_shares_read_public" on location_shares;
+drop policy if exists "location_shares_read_valid" on location_shares;
 drop policy if exists "location_shares_insert_public" on location_shares;
+drop policy if exists "location_shares_insert_authenticated" on location_shares;
 drop policy if exists "location_shares_delete" on location_shares;
-create policy "location_shares_read_public" on location_shares for select to anon, authenticated using (true);
-create policy "location_shares_insert_public" on location_shares for insert to anon, authenticated with check (true);
+create policy "location_shares_read_valid" on location_shares for select to anon, authenticated using (expires_at is null or expires_at > now());
+create policy "location_shares_insert_authenticated" on location_shares for insert to authenticated with check (auth.uid() = user_id);
 create policy "location_shares_delete" on location_shares for delete to authenticated using (is_admin() or auth.uid() = user_id);
 
 drop policy if exists "public read trip checkins" on trip_checkins;
@@ -835,9 +839,9 @@ create policy "page_views_select_admin" on page_views for select to authenticate
 drop policy if exists "allow insert visitor sessions" on visitor_sessions;
 drop policy if exists "allow read visitor sessions" on visitor_sessions;
 drop policy if exists "allow update visitor sessions" on visitor_sessions;
-drop policy if exists "visitor_sessions_insert_public" on visitor_sessions;
 drop policy if exists "visitor_sessions_update_public" on visitor_sessions;
+drop policy if exists "visitor_sessions_update_admin" on visitor_sessions;
 drop policy if exists "visitor_sessions_select_admin" on visitor_sessions;
 create policy "visitor_sessions_insert_public" on visitor_sessions for insert to anon, authenticated with check (true);
-create policy "visitor_sessions_update_public" on visitor_sessions for update to anon, authenticated using (true);
+create policy "visitor_sessions_update_admin" on visitor_sessions for update to authenticated using (is_admin()) with check (is_admin());
 create policy "visitor_sessions_select_admin" on visitor_sessions for select to authenticated using (is_admin());

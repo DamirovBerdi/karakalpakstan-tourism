@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { guides as staticGuides } from '@/data/tourism';
-import { SUPER_ADMIN_ACCOUNTS, AdminInfo, hashPassword } from '@/lib/adminAuth';
+import { AdminInfo } from '@/lib/adminAuth';
 import { generateSampleReceipts, PlatformReceipt } from '@/lib/receipts';
 
 // === Types ===
@@ -230,70 +230,45 @@ export default function AdminDashboard() {
 
     const uInput = username.trim();
     const pInput = password.trim();
-    const targetEmail = uInput.includes('@') ? uInput : `${uInput.toLowerCase()}@karakalpak.travel`;
+    const targetEmail = uInput.includes('@') ? uInput : `${uInput.toLowerCase()}@karakalpakstan.uz`;
 
     try {
-      // 1. Authenticate with Supabase Auth (cryptographically verified server-side JWT session)
+      // 1. Authenticate with Supabase Auth (server-side cryptographically signed JWT)
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: targetEmail,
         password: pInput,
       });
 
-      let currentSession = signInData?.session;
-      let hasAuthError = !!signInError;
-
-      // If account not yet registered in Supabase Auth, verify super admin credentials and auto-provision
-      if (hasAuthError && (uInput.toLowerCase() === 'azada122321' || uInput.toLowerCase() === 'damir122321')) {
-        const pHash = await hashPassword(pInput);
-        const superMatch = SUPER_ADMIN_ACCOUNTS.find(
-          (acc) => acc.username.toLowerCase() === uInput.toLowerCase() && acc.passwordHash === pHash
-        );
-        if (superMatch) {
-          const signUpRes = await supabase.auth.signUp({
-            email: targetEmail,
-            password: pInput,
-          });
-          if (signUpRes.data?.session) {
-            currentSession = signUpRes.data.session;
-            hasAuthError = false;
-          } else {
-            const retryRes = await supabase.auth.signInWithPassword({
-              email: targetEmail,
-              password: pInput,
-            });
-            currentSession = retryRes.data?.session;
-            hasAuthError = !!retryRes.error;
-          }
-        }
-      }
-
-      if (!hasAuthError && currentSession) {
-        const isSuper = targetEmail.includes('azada122321') || targetEmail.includes('damir122321') || targetEmail.endsWith('@karakalpak.travel');
-        const info: AdminInfo = {
-          username: uInput,
-          role: isSuper ? 'Super Admin' : 'Admin',
-          displayName: uInput.includes('damir') ? 'Damir' : (uInput.includes('azada') ? 'Azada' : uInput),
-        };
-        setAdminInfo(info);
-        setAuthed(true);
+      if (signInError || !signInData?.session?.user) {
+        setLoginError('Неверный логин или пароль администратора.');
         setLoggingIn(false);
         return;
       }
 
-      // 2. Offline fallback check for Super Admin
-      const pHash = await hashPassword(pInput);
-      const superMatch = SUPER_ADMIN_ACCOUNTS.find(
-        (acc) => acc.username.toLowerCase() === uInput.toLowerCase() && acc.passwordHash === pHash
-      );
-      if (superMatch) {
-        const info: AdminInfo = { username: superMatch.username, role: superMatch.role, displayName: superMatch.displayName };
-        setAdminInfo(info);
-        setAuthed(true);
+      const user = signInData.session.user;
+
+      // 2. Authorize strictly via database admin_users table (Server-Authoritative)
+      const { data: adminRecord, error: adminErr } = await supabase
+        .from('admin_users')
+        .select('role, display_name, email')
+        .or(`user_id.eq.${user.id},email.eq.${user.email}`)
+        .maybeSingle();
+
+      if (adminErr || !adminRecord) {
+        await supabase.auth.signOut();
+        setLoginError('Доступ запрещён: этот аккаунт не зарегистрирован в таблице администраторов.');
         setLoggingIn(false);
         return;
       }
 
-      setLoginError('Неверный логин или пароль администратора.');
+      const info: AdminInfo = {
+        username: uInput,
+        role: adminRecord.role || 'Super Admin',
+        displayName: adminRecord.display_name || uInput,
+        email: adminRecord.email,
+      };
+      setAdminInfo(info);
+      setAuthed(true);
     } catch {
       setLoginError('Ошибка подключения к серверу авторизации.');
     } finally {
@@ -319,16 +294,21 @@ export default function AdminDashboard() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user && mounted) {
-          const email = session.user.email ?? '';
-          const isSuper = email.includes('azada122321') || email.includes('damir122321') || email.endsWith('@karakalpak.travel');
-          if (isSuper) {
+          const user = session.user;
+          const { data: adminRecord } = await supabase
+            .from('admin_users')
+            .select('role, display_name, email')
+            .or(`user_id.eq.${user.id},email.eq.${user.email}`)
+            .maybeSingle();
+
+          if (adminRecord && mounted) {
             setAdminInfo({
-              username: email.split('@')[0],
-              role: 'Super Admin',
-              displayName: email.includes('damir') ? 'Damir' : 'Azada',
+              username: user.email?.split('@')[0] || 'admin',
+              role: adminRecord.role || 'Super Admin',
+              displayName: adminRecord.display_name || 'Admin',
+              email: adminRecord.email,
             });
             setAuthed(true);
-            return;
           }
         }
       } catch {
