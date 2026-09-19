@@ -47,16 +47,13 @@ export default function MiniGame() {
       // Finished
       setFinished(true);
       setStarted(false);
-      const pointsEarned = score * 15;
 
       if (user && score > 0) {
         setSubmitting(true);
-        await supabase
-          .from('user_points')
-          .insert({ user_id: user.id, points: pointsEarned, reason: 'quiz_win' });
-        await supabase
-          .from('quiz_results')
-          .insert({ user_id: user.id, score, total: quizQuestions.length, points_earned: pointsEarned });
+        await supabase.rpc('submit_quiz_result', {
+          p_score: score,
+          p_total: quizQuestions.length,
+        });
         setSubmitting(false);
       }
       if (score >= 7) {

@@ -28,49 +28,34 @@ export default function QrCheckin() {
     setSubmitting(true);
     setResult(null);
 
-    const { data: badge, error } = await supabase
+    const cleanCode = code.trim().toUpperCase();
+    const { error: claimError } = await supabase.rpc('claim_qr_badge', {
+      p_qr_code: cleanCode,
+    });
+
+    if (claimError) {
+      const errMsg = claimError.message || '';
+      if (errMsg.includes('already earned')) {
+        const { data: badge } = await supabase
+          .from('badges')
+          .select('*')
+          .eq('code', cleanCode)
+          .maybeSingle();
+        setResult({ success: false, badge: (badge as Badge) ?? undefined, message: t('qr.alreadyEarned') });
+      } else {
+        setResult({ success: false, message: t('qr.invalidCode') });
+      }
+      setSubmitting(false);
+      return;
+    }
+
+    const { data: badge } = await supabase
       .from('badges')
       .select('*')
-      .eq('code', code.trim().toUpperCase())
+      .eq('code', cleanCode)
       .maybeSingle();
 
-    if (error || !badge) {
-      setResult({ success: false, message: t('qr.invalidCode') });
-      setSubmitting(false);
-      return;
-    }
-
-    // Check if already earned
-    const { data: existing } = await supabase
-      .from('user_badges')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('badge_id', badge.id)
-      .maybeSingle();
-
-    if (existing) {
-      setResult({ success: false, badge: badge as Badge, message: t('qr.alreadyEarned') });
-      setSubmitting(false);
-      return;
-    }
-
-    // Award badge
-    const { error: badgeError } = await supabase
-      .from('user_badges')
-      .insert({ user_id: user.id, badge_id: badge.id, qr_code: code.trim().toUpperCase() });
-
-    if (badgeError) {
-      setResult({ success: false, message: badgeError.message });
-      setSubmitting(false);
-      return;
-    }
-
-    // Award points
-    await supabase
-      .from('user_points')
-      .insert({ user_id: user.id, points: badge.points, reason: 'qr_checkin' });
-
-    setResult({ success: true, badge: badge as Badge, message: t('qr.success') });
+    setResult({ success: true, badge: (badge as Badge) ?? undefined, message: t('qr.success') });
     setSubmitting(false);
   }, [user, t]);
 

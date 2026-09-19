@@ -77,11 +77,7 @@ export default function PhotoContest() {
       return;
     }
 
-    // Award 10 points for participating
-    await supabase
-      .from('user_points')
-      .insert({ user_id: user.id, points: 10, reason: 'contest_entry' });
-
+    // Points are awarded automatically server-side via database trigger
     setEntries([{ ...data as PhotoEntry }, ...entries]);
     setTitle('');
     setImageUrl('');
@@ -112,11 +108,7 @@ export default function PhotoContest() {
         .eq('id', entryId);
     }
 
-    // Award 2 points for voting
-    await supabase
-      .from('user_points')
-      .insert({ user_id: user.id, points: 2, reason: 'contest_vote' });
-
+    // Points (2) are awarded automatically server-side via database trigger
     setEntries(entries.map((e) => e.id === entryId ? { ...e, votes: e.votes + 1 } : e));
     setVotedIds(new Set([...votedIds, entryId]));
   };

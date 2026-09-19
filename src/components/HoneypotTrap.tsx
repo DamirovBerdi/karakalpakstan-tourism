@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, Terminal, Skull, AlertTriangle, ArrowLeft, Download, Bug } from 'lucide-react';
+import { ShieldAlert, Terminal, Skull, AlertTriangle, ArrowLeft, Bug } from 'lucide-react';
 
 interface HoneypotTrapProps {
   path: string;
@@ -156,15 +156,6 @@ export default function HoneypotTrap({ path }: HoneypotTrapProps) {
               <Bug className="h-4 w-4 text-red-400" />
               Ввести эксплоит (Zero-Day)
             </button>
-
-            <a
-              href="/admin-secret-backup.env"
-              download
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-sand-300 text-xs transition-all"
-            >
-              <Download className="h-3.5 w-3.5 text-sand-400" />
-              Скачать "секреты" (.env)
-            </a>
           </div>
         </div>
       </div>
