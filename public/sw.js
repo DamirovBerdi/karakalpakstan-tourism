@@ -38,6 +38,9 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
+  // Ignore non-http(s) schemes (e.g. chrome-extension://, moz-extension://)
+  if (!url.protocol.startsWith('http')) return;
+
   // Cache photos from image hosts (Pexels, Unsplash)
   if (IMAGE_HOSTS.includes(url.hostname) || event.request.destination === 'image') {
     event.respondWith(

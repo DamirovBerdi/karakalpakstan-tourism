@@ -43,7 +43,7 @@ export async function trackPageView(opts: TrackPageOptions = {}): Promise<void> 
     const supabaseUrl = (!rawUrl || rawUrl.includes('rjstejbrmnjtvgsrinif'))
       ? 'https://ythdfltgdvfjllgyutnz.supabase.co'
       : rawUrl;
-    const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || 'sb_publishable_1cvvhxJMGg3E-vtqjeW04w_J1NIsNOg';
+    const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0aGRmbHRnZHZmamxsZ3l1dG56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2Mjk1OTMsImV4cCI6MjEwNTIwNTU5M30.6iww9peFVE91jeI5wegtOAoAlhAwH2hPeEk-HfSrOdk';
 
     const apiUrl = `${supabaseUrl}/functions/v1/track-visitor`;
     await fetch(apiUrl, {
@@ -70,7 +70,7 @@ export async function trackServiceUsage(service: string, detail?: string): Promi
     const supabaseUrl = (!rawUrl || rawUrl.includes('rjstejbrmnjtvgsrinif'))
       ? 'https://ythdfltgdvfjllgyutnz.supabase.co'
       : rawUrl;
-    const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || 'sb_publishable_1cvvhxJMGg3E-vtqjeW04w_J1NIsNOg';
+    const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0aGRmbHRnZHZmamxsZ3l1dG56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2Mjk1OTMsImV4cCI6MjEwNTIwNTU5M30.6iww9peFVE91jeI5wegtOAoAlhAwH2hPeEk-HfSrOdk';
 
     const apiUrl = `${supabaseUrl}/functions/v1/track-visitor`;
     await fetch(apiUrl, {
