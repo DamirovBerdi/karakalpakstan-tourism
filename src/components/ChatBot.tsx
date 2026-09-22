@@ -14,9 +14,13 @@ import {
   Globe,
   ChevronDown,
   Check,
+  Loader2,
+  RotateCcw,
 } from 'lucide-react';
 import { useLang } from '@/lib/LanguageContext';
 import { findResponse } from '@/data/chatKnowledgeBase';
+import { askGeminiGuide, generateGeminiAudio } from '@/lib/geminiService';
+import FormattedMessage from './FormattedMessage';
 import {
   CHAT_LANGUAGES,
   BCP47_MAP,
@@ -74,6 +78,7 @@ export default function ChatBot() {
   const [loading, setLoading] = useState(false);
   const [unread, setUnread] = useState(false);
   const [audioPlayingId, setAudioPlayingId] = useState<number | null>(null);
+  const [audioLoadingId, setAudioLoadingId] = useState<number | null>(null);
   const [audioErrorId, setAudioErrorId] = useState<number | null>(null);
   const [audioSupported, setAudioSupported] = useState(true);
   const [showOnSiteBanner, setShowOnSiteBanner] = useState(true);
@@ -86,6 +91,7 @@ export default function ChatBot() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionType | null>(null);
   const initialized = useRef(false);
   const langDropdownRef = useRef<HTMLDivElement>(null);
@@ -213,11 +219,16 @@ export default function ChatBot() {
   }, []);
 
   const stopAudio = useCallback(() => {
+    if (audioElementRef.current) {
+      audioElementRef.current.pause();
+      audioElementRef.current = null;
+    }
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
     utteranceRef.current = null;
     setAudioPlayingId(null);
+    setAudioLoadingId(null);
   }, []);
 
   const playAudio = useCallback(
@@ -229,7 +240,45 @@ export default function ChatBot() {
 
       stopAudio();
       setAudioErrorId(null);
+      setAudioLoadingId(msgId);
 
+      // 1. First priority: High-fidelity Gemini Neural Voice
+      try {
+        const geminiAudioUrl = await generateGeminiAudio(text);
+        if (geminiAudioUrl) {
+          const audio = new Audio(geminiAudioUrl);
+          audioElementRef.current = audio;
+
+          audio.onended = () => {
+            setAudioPlayingId(null);
+            setAudioLoadingId(null);
+            audioElementRef.current = null;
+            URL.revokeObjectURL(geminiAudioUrl);
+          };
+
+          audio.onerror = () => {
+            setAudioPlayingId(null);
+            setAudioLoadingId(null);
+            audioElementRef.current = null;
+            URL.revokeObjectURL(geminiAudioUrl);
+          };
+
+          try {
+            await audio.play();
+            setAudioPlayingId(msgId);
+            setAudioLoadingId(null);
+            return;
+          } catch (playErr) {
+            console.warn('[AI Guide] audio.play() was interrupted or blocked:', playErr);
+          }
+        }
+      } catch (err) {
+        console.warn('[AI Guide] Gemini Neural TTS error, falling back to Web Speech:', err);
+      }
+
+      setAudioLoadingId(null);
+
+      // 2. Fallback: Browser Web Speech API
       if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
         setAudioErrorId(msgId);
         setAudioSupported(false);
@@ -237,7 +286,8 @@ export default function ChatBot() {
       }
 
       try {
-        const utterance = new SpeechSynthesisUtterance(text);
+        const cleanText = text.replace(/\*\*/g, '').replace(/[•\-\*]/g, '').trim();
+        const utterance = new SpeechSynthesisUtterance(cleanText);
         const bcp47 = BCP47_MAP[chatLang] ?? 'en-US';
         utterance.lang = bcp47;
         utterance.rate = 0.95;
@@ -292,6 +342,17 @@ export default function ChatBot() {
     [stopAudio]
   );
 
+  const handleClearChat = useCallback(() => {
+    stopAudio();
+    const currentUi = getChatUIStrings(chatLang);
+    setMessages([{ role: 'assistant', content: currentUi.welcome, id: nextId(), lang: chatLang }]);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  }, [chatLang, stopAudio]);
+
   const toggleRecording = useCallback(() => {
     const Ctor = getSpeechRecognitionCtor();
     if (!Ctor) return;
@@ -338,24 +399,38 @@ export default function ChatBot() {
       setInput('');
       setLoading(true);
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      try {
+        const { text: replyText, source } = await askGeminiGuide(trimmed, messages, chatLang);
+        const isFallbackReply = source === 'local_kb' && !isCoreLanguage(chatLang);
 
-      const validLang: 'en' | 'ru' | 'uz' | 'kaa' = (coreLang === 'ru' || coreLang === 'uz' || coreLang === 'kaa') ? coreLang : 'en';
-      const replyText = findResponse(trimmed, validLang);
-      const isFallbackReply = !isCoreLanguage(chatLang);
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: replyText,
-          id: nextId(),
-          lang: chatLang,
-          isFallback: isFallbackReply,
-        },
-      ]);
-      if (!open) setUnread(true);
-      setLoading(false);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: replyText,
+            id: nextId(),
+            lang: chatLang,
+            isFallback: isFallbackReply,
+          },
+        ]);
+      } catch (err) {
+        console.error('[AI Guide] Error getting reply:', err);
+        const validLang: 'en' | 'ru' | 'uz' | 'kaa' = (coreLang === 'ru' || coreLang === 'uz' || coreLang === 'kaa') ? coreLang : 'en';
+        const fallbackText = findResponse(trimmed, validLang);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: fallbackText,
+            id: nextId(),
+            lang: chatLang,
+            isFallback: false,
+          },
+        ]);
+      } finally {
+        if (!open) setUnread(true);
+        setLoading(false);
+      }
     },
     [loading, messages, open, chatLang, coreLang]
   );
@@ -432,6 +507,14 @@ export default function ChatBot() {
                   )}
                 </div>
                 <button
+                  onClick={handleClearChat}
+                  className="rounded-lg p-1.5 hover:bg-white/20 text-sand-200 hover:text-white transition-colors"
+                  title={chatLang === 'ru' ? 'Очистить историю' : chatLang === 'uz' ? 'Tarixni tozalash' : 'Clear chat'}
+                  aria-label="Clear chat history"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </button>
+                <button
                   onClick={() => setOpen(false)}
                   className="rounded-lg p-1.5 hover:bg-white/20 transition-colors"
                   aria-label="Close chat"
@@ -459,35 +542,54 @@ export default function ChatBot() {
                       <Bot className="h-4 w-4 text-deepblue-600" />
                     </div>
                   )}
-                  <div className="max-w-[80%]">
+                  <div className="max-w-[85%] sm:max-w-[80%]">
                     <div
-                      className={`rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words ${
+                      className={`rounded-2xl px-4 py-3 text-sm leading-relaxed break-words shadow-xs ${
                         msg.role === 'user'
-                          ? 'bg-terracotta-500 text-white rounded-br-md'
-                          : 'bg-white text-deepblue-900 ring-1 ring-sand-200 rounded-bl-md'
+                          ? 'bg-gradient-to-r from-terracotta-500 to-terracotta-600 text-white rounded-br-sm'
+                          : 'bg-white text-deepblue-900 ring-1 ring-sand-200 rounded-bl-sm border border-sand-100'
                       }`}
                     >
-                      {msg.content}
+                      <FormattedMessage content={msg.content} isUser={msg.role === 'user'} />
                     </div>
                     {msg.role === 'assistant' && msg.isFallback && (
                       <p className="mt-0.5 ml-1 text-[10px] text-deepblue-400 italic">{ui.fallbackNote}</p>
                     )}
-                    {msg.role === 'assistant' && audioSupported && (
-                      <div className="mt-1 flex items-center gap-1.5">
+                    {msg.role === 'assistant' && (
+                      <div className="mt-1.5 flex items-center gap-2">
                         <button
                           onClick={() => playAudio(msg.id, msg.content)}
-                          className="flex items-center gap-1 rounded-lg bg-deepblue-50 px-2 py-1 text-[10px] font-medium text-deepblue-600 ring-1 ring-deepblue-100 transition-all hover:bg-deepblue-100 disabled:opacity-50"
+                          disabled={audioLoadingId === msg.id}
+                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all shadow-2xs ${
+                            audioPlayingId === msg.id
+                              ? 'bg-terracotta-50 text-terracotta-600 ring-1 ring-terracotta-200'
+                              : 'bg-white text-deepblue-700 hover:bg-sand-100 ring-1 ring-sand-200/80 active:scale-95'
+                          }`}
                           aria-label={ui.listen}
                         >
-                          {audioPlayingId === msg.id ? (
+                          {audioLoadingId === msg.id ? (
                             <>
-                              <Square className="h-3 w-3 fill-current" />
-                              {ui.stop}
+                              <Loader2 className="h-3 w-3 animate-spin text-terracotta-500" />
+                              <span className="text-[11px] text-terracotta-600 font-medium">
+                                {chatLang === 'ru' ? 'Голос Gemini...' : 'Gemini ovozi...'}
+                              </span>
+                            </>
+                          ) : audioPlayingId === msg.id ? (
+                            <>
+                              <span className="flex items-center gap-0.5 h-3">
+                                <span className="w-0.5 h-2 bg-terracotta-500 rounded-full animate-pulse" />
+                                <span className="w-0.5 h-3.5 bg-terracotta-600 rounded-full animate-bounce" />
+                                <span className="w-0.5 h-1.5 bg-terracotta-500 rounded-full animate-pulse" />
+                              </span>
+                              <span className="text-[11px] text-terracotta-600 font-semibold">{ui.stop}</span>
                             </>
                           ) : (
                             <>
-                              <Volume2 className="h-3 w-3" />
-                              {ui.listen}
+                              <Volume2 className="h-3.5 w-3.5 text-deepblue-600" />
+                              <span className="text-[11px] font-medium flex items-center gap-1">
+                                {chatLang === 'ru' ? 'Озвучить' : chatLang === 'uz' ? 'Tinglash' : chatLang === 'kaa' ? 'Tıńlaw' : 'Listen'}
+                                <span className="rounded bg-deepblue-50 px-1 py-0.2 text-[9px] font-bold text-deepblue-700 ring-1 ring-deepblue-100">AI</span>
+                              </span>
                             </>
                           )}
                         </button>

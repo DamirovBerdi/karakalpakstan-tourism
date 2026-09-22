@@ -103,6 +103,23 @@ export function isUpdateAvailable() {
 export async function registerServiceWorker(): Promise<void> {
   if (!('serviceWorker' in navigator)) return;
 
+  // In development mode on localhost, unregister any active service worker to prevent Vite HMR / chunk conflicts
+  if (
+    import.meta.env.DEV ||
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1'
+  ) {
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const reg of registrations) {
+        await reg.unregister();
+      }
+    } catch {
+      // ignore
+    }
+    return;
+  }
+
   try {
     const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
 
