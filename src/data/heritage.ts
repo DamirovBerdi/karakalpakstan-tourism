@@ -116,7 +116,7 @@ export const museums: Museum[] = [
     },
     description: {
       en: 'Called the "Louvre of the Desert," this world-renowned museum houses the second-largest collection of Russian avant-garde art after the Russian Museum in St. Petersburg, plus 90,000 archaeological and ethnographic artifacts spanning 2,000 years of Karakalpak history.',
-      ru: 'Называемый «Лувром пустыни», этот всемирно известный музей хранит вторую по величине коллекцию русского авангарда после Русского музея в Санкт-Петербурге, а также 90 000 археологических и этнографических артефактов, охватывающих 2000 лет каракалпакской истории.',
+      ru: 'Называемый «Лувром пустыни», этот всемирно известный музей хранит вторую по величине коллекцию советского и русского авангарда после Русского музея в Санкт-Петербурге, а также 90 000 археологических и этнографических артефактов, охватывающих 2000 лет каракалпакской истории.',
       uz: '"Cho\'l Luvri" deb ataladigan bu jahon miqyosidagi muzey Sankt-Peterburgdagi Rossiya muzeyidan keyin rus avangard san\'atining ikkinchi yirik kolleksiyasini saqlaydi, shuningdek 2000 yillik qoraqalpoq tarixini qamrab olgan 90 000 arxeologik va etnografik artefaktlar.',
       kaa: '"Shól Luvri" atalatuǵın bul jer júzlik belgili muzey Sankt-Peterburgdaǵı Orıs muzeyinen keyin orıs avangard kórkem-óneriniń ekinshi iri kollekciyasın saqlaydı, sonday-aq 2000 jıllıq qaraqalpaq tariyxın qamtıǵan 90 000 arxeologiyalıq hám etnografiyalıq artefaktlar.',
     },
@@ -191,7 +191,7 @@ export const museums: Museum[] = [
     },
     type: {
       en: 'National History Museum',
-      ru: 'Национальный исторический музей',
+      ru: 'национальный исторический музей',
       uz: 'Milliy tarix muzeyi',
       kaa: 'Milliy tariyx muzeyi',
     },
