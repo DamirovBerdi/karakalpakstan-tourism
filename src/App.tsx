@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { ArrowLeft, MapPin, Compass, Landmark, Camera, Utensils, Moon, Truck, Wallet, Users, Plane, FileCheck, ShieldAlert, Sparkles, Tent, Gamepad } from 'lucide-react';
+import { ArrowLeft, MapPin, Compass, Landmark, Camera, Utensils, Moon, Truck, Wallet, Users, Plane, FileCheck, ShieldAlert, Sparkles, Tent, Gamepad, TrendingUp, Scroll } from 'lucide-react';
 import { LanguageProvider, useLang } from '@/lib/LanguageContext';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
@@ -43,6 +43,8 @@ const CurrencyConverter = lazy(() => import('@/components/CurrencyConverter'));
 const ChatBot = lazy(() => import('@/components/ChatBot'));
 const AdminDashboard = lazy(() => import('@/components/AdminDashboard'));
 const HoneypotTrap = lazy(() => import('@/components/HoneypotTrap'));
+const TourismAnalytics = lazy(() => import('@/components/TourismAnalytics'));
+const HeritageStories = lazy(() => import('@/components/heritage/HeritageStories'));
 
 const HONEYPOT_PATHS = [
   '/admin-panel-bypass',
@@ -120,6 +122,8 @@ function HomeExploreGrid() {
   };
 
   const PAGES = [
+    { id: 'analytics', icon: TrendingUp, titleRu: 'Статистика & Аналитика', descRu: 'Динамика туризма КР за 5 лет', gradient: 'from-blue-600 to-indigo-700' },
+    { id: 'stories', icon: Scroll, titleRu: 'Истории & Древние Легенды', descRu: 'Хорезм, Чилпык, Топрак-Кала & Арал', gradient: 'from-amber-600 to-rose-700' },
     { id: 'gps-map', icon: MapPin, titleRu: 'GPS & Живая Карта', descRu: 'Карта точек и навигация', gradient: 'from-blue-600 to-cyan-600' },
     { id: 'virtual', icon: Camera, titleRu: '360° Виртуальные Туры', descRu: 'Снимки 360° Арала и Муйнака', gradient: 'from-purple-600 to-pink-600' },
     { id: 'museums', icon: Landmark, titleRu: 'Музей Савицкого & Галереи', descRu: 'Русский авангард и история', gradient: 'from-amber-600 to-orange-600' },
@@ -207,6 +211,24 @@ function AppContent() {
   // DEDICATED PAGE ROUTER
   const renderRouteContent = () => {
     switch (route) {
+      case 'analytics':
+      case 'stats':
+        return (
+          <>
+            <PageBanner title="Аналитика & Статистика Туризма (2020–2025)" subtitle="Данные туристского потока, приток гостей и инфографика региона" />
+            <TourismAnalytics />
+          </>
+        );
+
+      case 'stories':
+      case 'history':
+        return (
+          <>
+            <PageBanner title="Истории & Древние Легенды" subtitle="Хроники Древнего Хорезма, зороастрийские башни и история Арала" />
+            <HeritageStories />
+          </>
+        );
+
       case 'tours':
         return (
           <>
