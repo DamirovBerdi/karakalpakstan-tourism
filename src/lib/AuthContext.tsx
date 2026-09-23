@@ -20,6 +20,7 @@ interface AuthContextValue {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, username: string) => Promise<{ error: string | null }>;
+  signInWithGoogle: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -32,21 +33,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const loadProfile = useCallback(async (uid: string) => {
-    const { data, error } = await supabase
-      .from('community_profiles')
-      .select('*')
-      .eq('id', uid)
-      .maybeSingle();
-    if (error) {
-      console.error('Profile load error:', error);
-      return;
+  const loadProfile = useCallback(async (uid: string, userMeta?: Record<string, any>) => {
+    try {
+      const { data } = await supabase
+        .from('community_profiles')
+        .select('*')
+        .eq('id', uid)
+        .maybeSingle();
+
+      if (data) {
+        setProfile(data as Profile);
+      } else {
+        // Auto-create profile for Google OAuth / Social Login
+        const fallbackName = userMeta?.full_name || userMeta?.name || userMeta?.email?.split('@')[0] || 'Traveler';
+        const fallbackAvatar = userMeta?.avatar_url || userMeta?.picture || null;
+        const newProf: Profile = {
+          id: uid,
+          username: fallbackName,
+          full_name: userMeta?.full_name || null,
+          avatar_url: fallbackAvatar,
+          bio: 'Путешественник по Каракалпакстану 🏜️',
+          home_country: 'Uzbekistan',
+          travel_interests: ['Аральское море', 'Музей Савицкого'],
+          created_at: new Date().toISOString(),
+        };
+        setProfile(newProf);
+
+        try {
+          await supabase.from('community_profiles').upsert({
+            id: uid,
+            username: fallbackName,
+            full_name: userMeta?.full_name || null,
+            avatar_url: fallbackAvatar,
+          });
+        } catch {
+          // ignore table constraints
+        }
+      }
+    } catch {
+      // ignore
     }
-    setProfile(data as Profile | null);
   }, []);
 
   const refreshProfile = useCallback(async () => {
-    if (user) await loadProfile(user.id);
+    if (user) await loadProfile(user.id, user.user_metadata);
   }, [user, loadProfile]);
 
   useEffect(() => {
@@ -57,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(data.session);
       setUser(data.session?.user ?? null);
       if (data.session?.user) {
-        loadProfile(data.session.user.id).finally(() => setLoading(false));
+        loadProfile(data.session.user.id, data.session.user.user_metadata).finally(() => setLoading(false));
       } else {
         setLoading(false);
       }
@@ -68,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(newSession);
         setUser(newSession?.user ?? null);
         if (newSession?.user) {
-          await loadProfile(newSession.user.id);
+          await loadProfile(newSession.user.id, newSession.user.user_metadata);
         } else {
           setProfile(null);
         }
@@ -114,13 +144,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null };
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    });
+    return { error: error?.message ?? null };
+  }, []);
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setProfile(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signIn, signUp, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, signIn, signUp, signInWithGoogle, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
