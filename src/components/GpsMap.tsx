@@ -309,13 +309,13 @@ export default function GpsMap() {
         {/* Header Title */}
         <div className="text-center mb-8 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 rounded-full bg-deepblue-100 px-4 py-1.5 text-xs font-semibold text-deepblue-700 mb-3">
-            <Crosshair className="h-3.5 w-3.5" /> Спутниковая Интерактивная GPS-Карта
+            <Crosshair className="h-3.5 w-3.5" /> {t('gps.satHeader')}
           </div>
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-deepblue-900 mb-3">
-            Живая Карта & Точные GPS-Координаты
+            {t('gps.title')}
           </h2>
           <p className="mx-auto max-w-2xl text-base text-deepblue-600">
-            Нажмите на любой объект в списке, чтобы моментально переместить спутниковую карту на его точные GPS-координаты.
+            {t('gps.subtitle')}
           </p>
         </div>
 
@@ -338,7 +338,7 @@ export default function GpsMap() {
                 className="flex items-center gap-2 rounded-xl bg-terracotta-500 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-terracotta-600 disabled:opacity-50 shadow-sm"
               >
                 {shared ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
-                {shared ? 'Ссылка скопирована' : 'Поделиться GPS'}
+                {shared ? t('gps.linkCopied') : t('gps.share')}
               </button>
             )}
           </div>
@@ -351,7 +351,7 @@ export default function GpsMap() {
                 mapType === 'satellite' ? 'bg-deepblue-900 text-white shadow-xs' : 'text-deepblue-700 hover:text-black'
               }`}
             >
-              <Globe className="h-3.5 w-3.5" /> Спутник
+              <Globe className="h-3.5 w-3.5" /> {t('gps.satellite')}
             </button>
             <button
               onClick={() => setMapType('street')}
@@ -359,7 +359,7 @@ export default function GpsMap() {
                 mapType === 'street' ? 'bg-deepblue-900 text-white shadow-xs' : 'text-deepblue-700 hover:text-black'
               }`}
             >
-              <Layers className="h-3.5 w-3.5" /> Карта Улиц
+              <Layers className="h-3.5 w-3.5" /> {t('gps.street')}
             </button>
           </div>
         </div>
@@ -381,7 +381,7 @@ export default function GpsMap() {
               {!leafletLoaded && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-sand-100/90 backdrop-blur-xs z-10">
                   <Loader2 className="h-8 w-8 text-deepblue-600 animate-spin mb-2" />
-                  <span className="text-sm font-semibold text-deepblue-800">Загрузка спутниковой карты...</span>
+                  <span className="text-sm font-semibold text-deepblue-800">{t('gps.loadingMap')}</span>
                 </div>
               )}
             </div>
@@ -399,7 +399,7 @@ export default function GpsMap() {
                     </span>
                   </div>
                   <h3 className="font-display text-lg font-bold text-deepblue-950">
-                    {selectedPoint.nameRu || selectedPoint.name}
+                    {lang === 'en' ? selectedPoint.name : selectedPoint.nameRu || selectedPoint.name}
                   </h3>
                   <p className="text-xs text-ink-600">{selectedPoint.descRu || selectedPoint.address}</p>
                 </div>
@@ -410,7 +410,7 @@ export default function GpsMap() {
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 rounded-xl bg-terracotta-500 px-4 py-2.5 text-xs font-bold text-white transition-all hover:bg-terracotta-600 shrink-0 shadow-xs"
                 >
-                  <Navigation className="h-4 w-4" /> Построить Маршрут <ExternalLink className="h-3.5 w-3.5 opacity-80" />
+                  <Navigation className="h-4 w-4" /> {t('gps.routeBtn')} <ExternalLink className="h-3.5 w-3.5 opacity-80" />
                 </a>
               </div>
             )}
@@ -419,8 +419,8 @@ export default function GpsMap() {
           {/* Interactive Locations List (4 Cols) */}
           <div className="lg:col-span-4 rounded-2xl bg-white p-4 border border-sand-200 shadow-sm max-h-[620px] flex flex-col">
             <h3 className="font-display text-base font-bold text-deepblue-950 mb-3 px-2 flex items-center justify-between">
-              <span>Список Объектов</span>
-              <span className="text-xs font-semibold text-ink-500">{mapPoints.length} мест</span>
+              <span>{t('gps.locationsList')}</span>
+              <span className="text-xs font-semibold text-ink-500">{mapPoints.length} {t('gps.placesCount')}</span>
             </h3>
 
             <div className="space-y-2 overflow-y-auto pr-1 flex-1">
@@ -448,7 +448,7 @@ export default function GpsMap() {
 
                     <div className="flex-1 min-w-0">
                       <h4 className="font-display text-sm font-bold text-ink-900 truncate">
-                        {point.name}
+                        {lang === 'en' ? point.name : point.nameRu || point.name}
                       </h4>
                       <p className="text-xs text-ink-500 truncate mt-0.5">
                         {point.nameRu || point.address}

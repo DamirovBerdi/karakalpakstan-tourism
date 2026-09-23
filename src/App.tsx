@@ -145,25 +145,111 @@ function PageBanner({ title, subtitle }: { title: string; subtitle?: string }) {
 
 // Home Page Visual Shortcut Grid for Dedicated Pages
 function HomeExploreGrid() {
+  const { lang, t } = useLang();
+
   const navigateTo = (path: string) => {
     window.location.hash = `#${path}`;
   };
 
   const PAGES = [
-    { id: 'analytics', icon: TrendingUp, titleRu: 'Статистика & Аналитика', descRu: 'Динамика туризма КР за 5 лет', gradient: 'from-blue-600 to-indigo-700' },
-    { id: 'stories', icon: Scroll, titleRu: 'Истории & Древние Легенды', descRu: 'Хорезм, Чилпык, Топрак-Кала & Арал', gradient: 'from-amber-600 to-rose-700' },
-    { id: 'gps-map', icon: MapPin, titleRu: 'GPS & Живая Карта', descRu: 'Карта точек и навигация', gradient: 'from-blue-600 to-cyan-600' },
-    { id: 'virtual', icon: Camera, titleRu: '360° Виртуальные Туры', descRu: 'Снимки 360° Арала и Муйнака', gradient: 'from-purple-600 to-pink-600' },
-    { id: 'museums', icon: Landmark, titleRu: 'Музей Савицкого & Галереи', descRu: 'Русский авангард и история', gradient: 'from-amber-600 to-orange-600' },
-    { id: 'culture', icon: Sparkles, titleRu: 'Культура & Ремесла', descRu: 'Костюмы, вышивка и сувениры', gradient: 'from-rose-600 to-red-600' },
-    { id: 'cuisine', icon: Utensils, titleRu: 'Номад-Кухня & Рыба', descRu: 'Аральский судак и бешбармак', gradient: 'from-emerald-600 to-teal-600' },
-    { id: 'around', icon: Compass, titleRu: 'Вокруг Меня (GPS)', descRu: 'Банкоматы, аптеки и базары', gradient: 'from-cyan-600 to-blue-700' },
-    { id: 'taxi', icon: Truck, titleRu: 'Такси 1222 & Трансфер', descRu: '4x4 Джип такси Нукус - Муйнак', gradient: 'from-amber-500 to-yellow-600' },
-    { id: 'flights', icon: Plane, titleRu: 'Авиабилеты', descRu: 'Рейсы в Нукус и Ташкент', gradient: 'from-indigo-600 to-blue-800' },
-    { id: 'aral', icon: Compass, titleRu: 'Аральское Море', descRu: 'Кладбище кораблей и каньоны', gradient: 'from-blue-700 to-teal-800' },
-    { id: 'muslim-travel', icon: Moon, titleRu: 'Халяль & Зиярат', descRu: 'Намаз, Кибла и святые места', gradient: 'from-green-600 to-emerald-800' },
-    { id: 'community', icon: Users, titleRu: 'Сообщество & Отзывы', descRu: 'Чат, фотоконкурс и квесты', gradient: 'from-fuchsia-600 to-pink-700' },
-    { id: 'budget', icon: Wallet, titleRu: 'Калькулятор Бюджета', descRu: 'Конвертер UZS и рассчет цен', gradient: 'from-teal-600 to-emerald-600' },
+    {
+      id: 'analytics',
+      icon: TrendingUp,
+      title: lang === 'ru' ? 'Статистика & Аналитика' : lang === 'uz' ? 'Statistika va Analitika' : lang === 'kaa' ? 'Statistika hám Analitika' : 'Tourism Statistics & Analytics',
+      desc: lang === 'ru' ? 'Динамика туризма КР за 5 лет' : lang === 'uz' ? '5 yillik turizm dinamikasi' : lang === 'kaa' ? '5 jıllıq turizm dinamikası' : '5-Year Karakalpakstan Tourism Trends',
+      gradient: 'from-blue-600 to-indigo-700'
+    },
+    {
+      id: 'stories',
+      icon: Scroll,
+      title: lang === 'ru' ? 'Истории & Легенды' : lang === 'uz' ? 'Tarix va Afsonalar' : lang === 'kaa' ? 'Tariyx hám Afsonalar' : 'Stories & Ancient Legends',
+      desc: lang === 'ru' ? 'Древний Хорезм, Чилпык & Арал' : lang === 'uz' ? 'Qadimgi Xorazm, Chilpiq va Orol' : lang === 'kaa' ? 'Áyyemgi Xorezm, Chilpıq hám Aral' : 'Khorezm, Chilpyk & Aral History',
+      gradient: 'from-amber-600 to-rose-700'
+    },
+    {
+      id: 'gps-map',
+      icon: MapPin,
+      title: lang === 'ru' ? 'GPS & Живая Карта' : lang === 'uz' ? 'GPS va Jonli Xarita' : lang === 'kaa' ? 'GPS hám Jantlı Karta' : 'GPS & Live Satellite Map',
+      desc: lang === 'ru' ? 'Карта точек и навигация' : lang === 'uz' ? 'Obyektlar xaritasi va navigatsiya' : lang === 'kaa' ? 'Obyektler kartası hám navigatsiya' : 'Map points & satellite flyTo',
+      gradient: 'from-blue-600 to-cyan-600'
+    },
+    {
+      id: 'virtual',
+      icon: Camera,
+      title: lang === 'ru' ? '360° Виртуальные Туры' : lang === 'uz' ? '360° Virtual Sayohatlar' : lang === 'kaa' ? '360° Virtual Sayahatlar' : '360° Virtual Tours',
+      desc: lang === 'ru' ? 'Снимки 360° Арала и Муйнака' : lang === 'uz' ? 'Orol va Moʻynoq 360° manzaralari' : lang === 'kaa' ? 'Aral hám Moynaq 360° kórinisleri' : 'Panoramic 360° views of Savitsky & Aral',
+      gradient: 'from-purple-600 to-pink-600'
+    },
+    {
+      id: 'museums',
+      icon: Landmark,
+      title: lang === 'ru' ? 'Музей Савицкого & Галереи' : lang === 'uz' ? 'Savitskiy Muzeyi va Galereyalar' : lang === 'kaa' ? 'Savickiy Muzyeyi hám Galereyalar' : 'Savitsky Museum & Galleries',
+      desc: lang === 'ru' ? 'Русский авангард и история' : lang === 'uz' ? 'Rus avangardi va qadimgi tarix' : lang === 'kaa' ? 'Rus avangardi hám áyyemgi tariyx' : 'Russian avant-garde & ancient art',
+      gradient: 'from-amber-600 to-orange-600'
+    },
+    {
+      id: 'culture',
+      icon: Sparkles,
+      title: lang === 'ru' ? 'Культура & Ремесла' : lang === 'uz' ? 'Madaniyat va Hunarmandchilik' : lang === 'kaa' ? 'Mädeniyat hám Ónermentshilik' : 'Culture & Folk Crafts',
+      desc: lang === 'ru' ? 'Костюмы, вышивка и сувениры' : lang === 'uz' ? 'Milliy liboslar, kashtachilik' : lang === 'kaa' ? 'Milliy kiyimler, kesteshiilik' : 'Traditional costumes & souvenirs',
+      gradient: 'from-rose-600 to-red-600'
+    },
+    {
+      id: 'cuisine',
+      icon: Utensils,
+      title: lang === 'ru' ? 'Номад-Кухня & Рыба' : lang === 'uz' ? 'Koʻchmanchilar Oshxonasi' : lang === 'kaa' ? 'Kóshpeliler Taomları' : 'Nomad Cuisine & Fish',
+      desc: lang === 'ru' ? 'Аральский судак и бешбармак' : lang === 'uz' ? 'Orol sudagi va beshbarmaq' : lang === 'kaa' ? 'Aral sudagı hám beshbarmaq' : 'Aral pike-perch & Beshbarmak',
+      gradient: 'from-emerald-600 to-teal-600'
+    },
+    {
+      id: 'around',
+      icon: Compass,
+      title: lang === 'ru' ? 'Вокруг Меня (GPS)' : lang === 'uz' ? 'Atrofimda (GPS)' : lang === 'kaa' ? 'Átrafımda (GPS)' : 'Around Me (GPS Nearby)',
+      desc: lang === 'ru' ? 'Банкоматы, аптеки и базары' : lang === 'uz' ? 'Bankomatlar, dorixonalar, bozorlar' : lang === 'kaa' ? 'Bankomatlar, dárixanalar, bazarlar' : 'ATMs, pharmacies & bazaars nearby',
+      gradient: 'from-cyan-600 to-blue-700'
+    },
+    {
+      id: 'taxi',
+      icon: Truck,
+      title: lang === 'ru' ? 'Такси 1222 & Трансфер' : lang === 'uz' ? 'Taksi 1222 va Transfer' : lang === 'kaa' ? 'Taksi 1222 hám Transfer' : 'Taxi 1222 & Desert 4x4',
+      desc: lang === 'ru' ? '4x4 Джип такси Нукус - Муйнак' : lang === 'uz' ? '4x4 Jip taksi Nukus - Moʻynoq' : lang === 'kaa' ? '4x4 Djip taksi Nókis - Moynaq' : '4x4 Off-road Jeep transfer Nukus-Muynak',
+      gradient: 'from-amber-500 to-yellow-600'
+    },
+    {
+      id: 'flights',
+      icon: Plane,
+      title: lang === 'ru' ? 'Авиабилеты' : lang === 'uz' ? 'Avia Chiptalar' : lang === 'kaa' ? 'Avia Chiptalar' : 'Flight Booking',
+      desc: lang === 'ru' ? 'Рейсы в Нукус и Ташкент' : lang === 'uz' ? 'Nukus va Toshkent parvozlari' : lang === 'kaa' ? 'Nókis hám Tashkent reysleri' : 'Flights to Nukus & Tashkent',
+      gradient: 'from-indigo-600 to-blue-800'
+    },
+    {
+      id: 'aral',
+      icon: Compass,
+      title: lang === 'ru' ? 'Аральское Море' : lang === 'uz' ? 'Orol Dengizi Exspeditsiyasi' : lang === 'kaa' ? 'Aral Teńizi Ekspeditsiyası' : 'Aral Sea Expedition',
+      desc: lang === 'ru' ? 'Кладбище кораблей и каньоны' : lang === 'uz' ? 'Kemalar qabristoni va kanyonlar' : lang === 'kaa' ? 'Kemalar qábirstanlıǵı hám kanyonlar' : 'Ship graveyard & Ustyurt Canyons',
+      gradient: 'from-blue-700 to-teal-800'
+    },
+    {
+      id: 'muslim-travel',
+      icon: Moon,
+      title: lang === 'ru' ? 'Халяль & Зиярат' : lang === 'uz' ? 'Halol va Ziyorat Turizmi' : lang === 'kaa' ? 'Halal hám Ziyorat Turizmi' : 'Halal & Ziyarat Travel',
+      desc: lang === 'ru' ? 'Намаз, Кибла и святые места' : lang === 'uz' ? 'Namozi va Qibla kompassi' : lang === 'kaa' ? 'Namaz hám Qibla kompassı' : 'Namaz times, Qibla compass & shrines',
+      gradient: 'from-green-600 to-emerald-800'
+    },
+    {
+      id: 'community',
+      icon: Users,
+      title: lang === 'ru' ? 'Сообщество & Отзывы' : lang === 'uz' ? 'Hamjamiyat va Sharhlar' : lang === 'kaa' ? 'Jámáátshilik hám Pikirlers' : 'Traveler Community & Reviews',
+      desc: lang === 'ru' ? 'Чат, фотоконкурс и квесты' : lang === 'uz' ? 'Sayohatlar chati va tanlovlar' : lang === 'kaa' ? 'Sayahatlar chatı hám tańlawlar' : 'Chat, photo contest & badges',
+      gradient: 'from-fuchsia-600 to-pink-700'
+    },
+    {
+      id: 'budget',
+      icon: Wallet,
+      title: lang === 'ru' ? 'Калькулятор Бюджета' : lang === 'uz' ? 'Bujet Kalkulyatori' : lang === 'kaa' ? 'Bujet Kalkulyatorı' : 'Travel Budget Planner',
+      desc: lang === 'ru' ? 'Конвертер UZS и рассчет цен' : lang === 'uz' ? 'UZS valyuta konvertori va hisob-kitob' : lang === 'kaa' ? 'UZS valyuta konvertorı hám esap-kitap' : 'UZS currency converter & expense calculator',
+      gradient: 'from-teal-600 to-emerald-600'
+    },
   ];
 
   return (
@@ -171,13 +257,13 @@ function HomeExploreGrid() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10">
           <span className="inline-block rounded-full bg-gold-400/20 px-3.5 py-1 text-xs font-bold text-garnet-600 mb-2">
-            ВСЕ СЕРВИСЫ И СТРАНИЦЫ
+            {t('grid.allSections')}
           </span>
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-ink-900">
-            Исследуйте Разделы На Отдельных Страницах
+            {t('grid.title')}
           </h2>
           <p className="mt-2 text-sm sm:text-base text-ink-600 max-w-2xl mx-auto">
-            Кликните на любой раздел, чтобы открыть его на отдельной странице!
+            {t('grid.subtitle')}
           </p>
         </div>
 
@@ -195,9 +281,9 @@ function HomeExploreGrid() {
                 </div>
                 <div>
                   <h3 className="font-display text-base font-bold text-ink-900 group-hover:text-garnet-600 transition-colors">
-                    {page.titleRu}
+                    {page.title}
                   </h3>
-                  <p className="mt-1 text-xs text-ink-500 line-clamp-2">{page.descRu}</p>
+                  <p className="mt-1 text-xs text-ink-500 line-clamp-2">{page.desc}</p>
                 </div>
               </button>
             );
@@ -209,6 +295,7 @@ function HomeExploreGrid() {
 }
 
 function AppContent() {
+  const { lang, t } = useLang();
   const currentPath = window.location.pathname.toLowerCase();
   const route = useCurrentRoute();
 
@@ -243,7 +330,10 @@ function AppContent() {
       case 'stats':
         return (
           <>
-            <PageBanner title="Аналитика & Статистика Туризма (2020–2025)" subtitle="Данные туристского потока, приток гостей и инфографика региона" />
+            <PageBanner
+              title={lang === 'ru' ? 'Аналитика & Статистика Туризма (2020–2025)' : lang === 'uz' ? 'Turizm Analitikasi va Statistikasi (2020–2025)' : lang === 'kaa' ? 'Turizm Analitikası hám Statistikası (2020–2025)' : 'Tourism Analytics & Statistics (2020–2025)'}
+              subtitle={lang === 'ru' ? 'Данные туристского потока, приток гостей и инфографика региона' : lang === 'uz' ? 'Sayyohlar oqimi va mintaqaviy infografika' : lang === 'kaa' ? 'Turistler aǵımı hám aymaqlıq infografika' : 'Tourist inflow data, visitor trends, and regional infographics'}
+            />
             <TourismAnalytics />
           </>
         );
@@ -252,7 +342,10 @@ function AppContent() {
       case 'history':
         return (
           <>
-            <PageBanner title="Истории & Древние Легенды" subtitle="Хроники Древнего Хорезма, зороастрийские башни и история Арала" />
+            <PageBanner
+              title={lang === 'ru' ? 'Истории & Древние Легенды' : lang === 'uz' ? 'Tarix va Qadimgi Afsonalar' : lang === 'kaa' ? 'Tariyx hám Áyyemgi Afsonalar' : 'Stories & Ancient Legends'}
+              subtitle={lang === 'ru' ? 'Хроники Древнего Хорезма, зороастрийские башни и история Арала' : lang === 'uz' ? 'Qadimgi Xorazm va Orol dengizi tarixi' : lang === 'kaa' ? 'Áyyemgi Xorezm hám Aral teńizi tariyxı' : 'Chronicles of Ancient Khorezm, Zoroastrian towers, and Aral history'}
+            />
             <HeritageStories />
           </>
         );
@@ -260,7 +353,10 @@ function AppContent() {
       case 'tours':
         return (
           <>
-            <PageBanner title="Туры & Экскурсии" subtitle="Экспедиции к Аральскому морю, каньоны Устюрта и исторические крепости" />
+            <PageBanner
+              title={lang === 'ru' ? 'Туры & Экскурсии' : lang === 'uz' ? 'Sayohatlar va Ekskursiyalar' : lang === 'kaa' ? 'Sayahatlar hám Ekskursiyalar' : 'Tours & Expeditions'}
+              subtitle={lang === 'ru' ? 'Экспедиции к Аральскому морю, каньоны Устюрта и исторические крепости' : lang === 'uz' ? 'Orol dengizi va Ustyurt kanyonlariga ekspeditsiyalar' : lang === 'kaa' ? 'Aral teńizi hám Ústirt kanyonlarına ekspeditsiyalar' : 'Aral Sea expeditions, Ustyurt canyons, and ancient fortresses'}
+            />
             <ToursSection />
             <Guides />
             <TravelBuddyMatcher />
@@ -270,7 +366,10 @@ function AppContent() {
       case 'guides':
         return (
           <>
-            <PageBanner title="Персональные Гиды" subtitle="Лицензированные гиды-полиглоты со знанием языков" />
+            <PageBanner
+              title={lang === 'ru' ? 'Персональные Гиды' : lang === 'uz' ? 'Shaxsiy Gidlar' : lang === 'kaa' ? 'Jeke Gidlar' : 'Personal Licensed Guides'}
+              subtitle={lang === 'ru' ? 'Лицензированные гиды-полиглоты со знанием языков' : lang === 'uz' ? 'Til biladigan litsenziyalangan gidlar' : lang === 'kaa' ? 'Til biletin litsenziyalanǵan gidlar' : 'Polyglot licensed local guides with deep regional knowledge'}
+            />
             <Guides />
           </>
         );
@@ -278,7 +377,10 @@ function AppContent() {
       case 'visa':
         return (
           <>
-            <PageBanner title="Поддержка E-Visa" subtitle="Проверка права на въезд и официальное оформление визы в Узбекистан" />
+            <PageBanner
+              title={lang === 'ru' ? 'Поддержка E-Visa' : lang === 'uz' ? 'E-Visa Yordami' : lang === 'kaa' ? 'E-Visa Járdemi' : 'E-Visa Assistance'}
+              subtitle={lang === 'ru' ? 'Проверка права на въезд и официальное оформление визы в Узбекистан' : lang === 'uz' ? 'Oʻzbekistonga e-viza rasmiylashtirish' : lang === 'kaa' ? 'Ózbekstanǵa e-viza rásmiylestiriw' : 'Check entry eligibility & official Uzbekistan e-visa portal'}
+            />
             <VisaAssistance />
           </>
         );
@@ -286,7 +388,10 @@ function AppContent() {
       case 'hotels':
         return (
           <>
-            <PageBanner title="Отели & Юртовые Лагеря" subtitle="Традиционные юрты на берегу Арала и бутик-отели Нукуса" />
+            <PageBanner
+              title={lang === 'ru' ? 'Отели & Юртовые Лагеря' : lang === 'uz' ? 'Mehmonxonalar va Yurt Lagerlari' : lang === 'kaa' ? 'Meymanxanalar hám Yurt Lagerleri' : 'Hotels & Yurt Camps'}
+              subtitle={lang === 'ru' ? 'Традиционные юрты на берегу Арала и бутик-отели Нукуса' : lang === 'uz' ? 'Orol boʻyidagi yurtalar va Nukus mehmonxonalari' : lang === 'kaa' ? 'Aral boyındaǵı yurtalar hám Nókis meymanxanaları' : 'Traditional yurt camps on Aral shore & Nukus boutique hotels'}
+            />
             <Hotels />
           </>
         );
@@ -296,7 +401,10 @@ function AppContent() {
       case 'map':
         return (
           <>
-            <PageBanner title="GPS & Живая Карта" subtitle="Интерактивная карта объектов с точным определением геопозиции" />
+            <PageBanner
+              title={lang === 'ru' ? 'GPS & Живая Карта' : lang === 'uz' ? 'GPS va Jonli Xarita' : lang === 'kaa' ? 'GPS hám Jantlı Karta' : 'GPS & Live Satellite Map'}
+              subtitle={lang === 'ru' ? 'Интерактивная карта объектов с точным определением геопозиции' : lang === 'uz' ? 'Obyektlar va GPS navigatsiya xaritasi' : lang === 'kaa' ? 'Obyektler hám GPS navigatsiya kartası' : 'Interactive satellite map with precise GPS point flyTo'}
+            />
             <GpsMap />
           </>
         );
@@ -304,7 +412,10 @@ function AppContent() {
       case 'around':
         return (
           <>
-            <PageBanner title="Вокруг Меня" subtitle="Находите рестораны, банкоматы, аптеки и базары рядом с вами" />
+            <PageBanner
+              title={lang === 'ru' ? 'Вокруг Меня' : lang === 'uz' ? 'Atrofimda' : lang === 'kaa' ? 'Átrafımda' : 'Around Me'}
+              subtitle={lang === 'ru' ? 'Находите рестораны, банкоматы, аптеки и базары рядом с вами' : lang === 'uz' ? 'Yaqiningizdagi restoran va bankomatlar' : lang === 'kaa' ? 'Jaqınıńızdaǵı restoran hám bankomatlar' : 'Discover nearby restaurants, ATMs, pharmacies & bazaars'}
+            />
             <AroundMe />
           </>
         );
