@@ -16,7 +16,7 @@ const CATEGORY_STYLES: Record<string, { bg: string; text: string; label: Record<
   cultural: { bg: 'bg-terracotta-100', text: 'text-terracotta-700', label: { en: 'Cultural', ru: 'Культурный', uz: 'Madaniy', kaa: 'Mádeniy' } },
   eco: { bg: 'bg-green-100', text: 'text-green-700', label: { en: 'Eco', ru: 'Эко', uz: 'Eko', kaa: 'Eko' } },
   music: { bg: 'bg-purple-100', text: 'text-purple-700', label: { en: 'Music', ru: 'Музыка', uz: 'Musiqa', kaa: 'Muzıka' } },
-  national: { bg: 'bg-deepblue-100', text: 'text-deepblue-700', label: { en: 'National', ru: 'Национальный', uz: 'Milliy', kaa: 'Milliy' } },
+  national: { bg: 'bg-deepblue-100', text: 'text-deepblue-700', label: { en: 'National', ru: 'национальный', uz: 'Milliy', kaa: 'Milliy' } },
   historical: { bg: 'bg-sand-200', text: 'text-sand-800', label: { en: 'Historical', ru: 'Исторический', uz: 'Tarixiy', kaa: 'Tariyxıy' } },
 };
 
