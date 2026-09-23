@@ -38,7 +38,12 @@ export interface MapPoint {
   category: 'attraction' | 'atm' | 'restaurant' | 'yurt';
   x: number;
   y: number;
+  lat: number;
+  lng: number;
   name: string;
+  nameRu?: string;
+  descRu?: string;
+  address?: string;
 }
 
 export interface SafetyPhrase {
@@ -205,16 +210,106 @@ export const transportRoutes: TransportRoute[] = [
 ];
 
 export const mapPoints: MapPoint[] = [
-  { id: 1, category: 'attraction', x: 55, y: 35, name: 'Savitsky Museum' },
-  { id: 2, category: 'attraction', x: 38, y: 22, name: 'Moynaq Ship Graveyard' },
-  { id: 3, category: 'attraction', x: 30, y: 50, name: 'Ustyurt Plateau' },
-  { id: 4, category: 'attraction', x: 72, y: 42, name: 'Kyzylkum Desert' },
-  { id: 5, category: 'atm', x: 57, y: 37, name: 'Nukus Bank ATM' },
-  { id: 6, category: 'atm', x: 53, y: 33, name: 'Currency Exchange Booth' },
-  { id: 7, category: 'restaurant', x: 56, y: 36, name: 'Nukus City Restaurant' },
-  { id: 8, category: 'restaurant', x: 39, y: 24, name: 'Moynaq Fish Cafe' },
-  { id: 9, category: 'yurt', x: 30, y: 48, name: 'Ustyurt Yurt Camp' },
-  { id: 10, category: 'yurt', x: 40, y: 20, name: 'Aral Sea Yurt Camp' },
+  {
+    id: 1,
+    category: 'attraction',
+    x: 55, y: 35,
+    lat: 42.4651, lng: 59.6142,
+    name: 'Savitsky Museum',
+    nameRu: 'Музей искусств им. И.В. Савицкого',
+    descRu: 'Знаменитый «Лувр в пустыне» с мировой коллекцией авангарда',
+    address: 'ул. Рыскулова 64, Нукус'
+  },
+  {
+    id: 2,
+    category: 'attraction',
+    x: 38, y: 22,
+    lat: 43.7634, lng: 59.0322,
+    name: 'Moynaq Ship Graveyard',
+    nameRu: 'Кладбище кораблей Муйнак',
+    descRu: 'Забытые корабли на бывшем дне Аральского моря',
+    address: 'г. Муйнак, бывшая пристань'
+  },
+  {
+    id: 3,
+    category: 'attraction',
+    x: 30, y: 50,
+    lat: 44.5200, lng: 58.2800,
+    name: 'Ustyurt Plateau',
+    nameRu: 'Плато Устюрт & Каньоны',
+    descRu: 'Чинк Устюрта, меловые каньоны и марсианские пейзажи',
+    address: 'Плато Устюрт'
+  },
+  {
+    id: 4,
+    category: 'attraction',
+    x: 72, y: 42,
+    lat: 42.2000, lng: 61.5000,
+    name: 'Kyzylkum Desert',
+    nameRu: 'Пустыня Кызылкум',
+    descRu: 'Бескрайние песчаные барханы и древние цитадели',
+    address: 'Пустыня Кызылкум'
+  },
+  {
+    id: 5,
+    category: 'atm',
+    x: 57, y: 37,
+    lat: 42.4628, lng: 59.6105,
+    name: 'Nukus Bank ATM',
+    nameRu: 'Банкомат НБУ (Нукус)',
+    descRu: 'Круглосуточный банкомат VISA / Mastercard / Humo',
+    address: 'ул. Досназарова 32, Нукус'
+  },
+  {
+    id: 6,
+    category: 'atm',
+    x: 53, y: 33,
+    lat: 42.4672, lng: 59.6185,
+    name: 'Currency Exchange Booth',
+    nameRu: 'Пункт обмена валют (Нукус)',
+    descRu: 'Обмен USD, EUR, RUB на узбекские сумы (UZS)',
+    address: 'Центральный базар, Нукус'
+  },
+  {
+    id: 7,
+    category: 'restaurant',
+    x: 56, y: 36,
+    lat: 42.4640, lng: 59.6120,
+    name: 'Nukus City Restaurant',
+    nameRu: 'Ресторан Нукус Сити',
+    descRu: 'Национальная каракалпакская кухня и бешбармак',
+    address: 'ул. Амира Тимура 12, Нукус'
+  },
+  {
+    id: 8,
+    category: 'restaurant',
+    x: 39, y: 24,
+    lat: 43.7595, lng: 59.0280,
+    name: 'Moynaq Fish Cafe',
+    nameRu: 'Рыбное кафе Муйнак',
+    descRu: 'Свежежареный аральский судак и национальные блюда',
+    address: 'ул. Бердаха 5, Муйнак'
+  },
+  {
+    id: 9,
+    category: 'yurt',
+    x: 30, y: 48,
+    lat: 44.3800, lng: 58.1500,
+    name: 'Ustyurt Yurt Camp',
+    nameRu: 'Юртовый лагерь Устюрт',
+    descRu: 'Традиционные юрты на краю живописного чинка',
+    address: 'Каньон Устюрт'
+  },
+  {
+    id: 10,
+    category: 'yurt',
+    x: 40, y: 20,
+    lat: 44.6420, lng: 58.2150,
+    name: 'Aral Sea Yurt Camp',
+    nameRu: 'Юртовый лагерь Аралкум',
+    descRu: 'Ночевка под звездами на самом берегу Аральского моря',
+    address: 'Западный берег Арала'
+  },
 ];
 
 export const safetyPhrases: SafetyPhrase[] = [
