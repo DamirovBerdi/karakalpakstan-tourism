@@ -1,5 +1,5 @@
-const CACHE_NAME = 'kk-tourism-v1';
-const IMAGE_CACHE_NAME = 'kk-images-v1';
+const CACHE_NAME = 'kk-tourism-v2';
+const IMAGE_CACHE_NAME = 'kk-images-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html'
@@ -17,7 +17,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate Event
+// Activate Event - Clean up old caches immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -32,7 +32,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch Event - Stale-While-Revalidate & Image Cache
+// Fetch Event
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
@@ -64,6 +64,22 @@ self.addEventListener('fetch', (event) => {
 
   // Exclude non-same-origin API calls
   if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  // For HTML navigation & index.html, use Network-First so users always get current chunk hashes
+  if (event.request.mode === 'navigate' || url.pathname === '/' || url.pathname === '/index.html') {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(event.request).then((res) => res || Response.error()))
+    );
     return;
   }
 

@@ -8,43 +8,71 @@ import SosButton from '@/components/SosButton';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import { initVisitorTracking } from '@/lib/visitorTracking';
 
+// Safe lazy import with auto-retry when a new build deploys new hashed chunks
+function lazyRetry<T extends React.ComponentType<any>>(
+  componentImport: () => Promise<{ default: T }>
+) {
+  return lazy(async () => {
+    const pageHasAlreadyBeenRefreshed = JSON.parse(
+      window.sessionStorage.getItem('page-has-been-refreshed') || 'false'
+    );
+    try {
+      return await componentImport();
+    } catch (error) {
+      if (!pageHasAlreadyBeenRefreshed) {
+        window.sessionStorage.setItem('page-has-been-refreshed', 'true');
+        window.location.reload();
+        return new Promise(() => {});
+      }
+      throw error;
+    }
+  });
+}
+
+// Clear chunk refresh flag after successful load
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', () => {
+    window.sessionStorage.setItem('page-has-been-refreshed', 'false');
+  });
+}
+
 // Lazy load dedicated page components
-const SurpriseMe = lazy(() => import('@/components/SurpriseMe'));
-const VirtualTour = lazy(() => import('@/components/heritage/VirtualTour'));
-const Museums = lazy(() => import('@/components/heritage/Museums'));
-const Culture = lazy(() => import('@/components/heritage/Culture'));
-const Cuisine = lazy(() => import('@/components/heritage/Cuisine'));
-const GpsMap = lazy(() => import('@/components/GpsMap'));
-const AroundMe = lazy(() => import('@/components/AroundMe'));
-const TripTracker = lazy(() => import('@/components/TripTracker'));
-const Reviews = lazy(() => import('@/components/Reviews'));
-const Community = lazy(() => import('@/components/Community'));
-const QrCheckin = lazy(() => import('@/components/QrCheckin'));
-const PhotoContest = lazy(() => import('@/components/PhotoContest'));
-const Leaderboard = lazy(() => import('@/components/Leaderboard'));
-const MiniGame = lazy(() => import('@/components/MiniGame'));
-const ProfileDashboard = lazy(() => import('@/components/ProfileDashboard'));
-const MuslimTravel = lazy(() => import('@/components/MuslimTravel'));
-const TaxiBooking = lazy(() => import('@/components/TaxiBooking'));
-const VisaAssistance = lazy(() => import('@/components/VisaAssistance'));
-const FlightBooking = lazy(() => import('@/components/FlightBooking'));
-const ToursSection = lazy(() => import('@/components/ToursSection'));
-const TravelBuddyMatcher = lazy(() => import('@/components/TravelBuddyMatcher'));
-const Guides = lazy(() => import('@/components/Guides'));
-const Hotels = lazy(() => import('@/components/Hotels'));
-const Transport = lazy(() => import('@/components/Transport'));
-const InteractiveMap = lazy(() => import('@/components/InteractiveMap'));
-const Essentials = lazy(() => import('@/components/Essentials'));
-const PlanExplore = lazy(() => import('@/components/planExplore/PlanExplore'));
-const AralExperience = lazy(() => import('@/components/aralExperience/AralExperience'));
-const EmergencyKit = lazy(() => import('@/components/EmergencyKit'));
-const BudgetPlanner = lazy(() => import('@/components/BudgetPlanner'));
-const CurrencyConverter = lazy(() => import('@/components/CurrencyConverter'));
-const ChatBot = lazy(() => import('@/components/ChatBot'));
-const AdminDashboard = lazy(() => import('@/components/AdminDashboard'));
-const HoneypotTrap = lazy(() => import('@/components/HoneypotTrap'));
-const TourismAnalytics = lazy(() => import('@/components/TourismAnalytics'));
-const HeritageStories = lazy(() => import('@/components/heritage/HeritageStories'));
+const SurpriseMe = lazyRetry(() => import('@/components/SurpriseMe'));
+const VirtualTour = lazyRetry(() => import('@/components/heritage/VirtualTour'));
+const Museums = lazyRetry(() => import('@/components/heritage/Museums'));
+const Culture = lazyRetry(() => import('@/components/heritage/Culture'));
+const Cuisine = lazyRetry(() => import('@/components/heritage/Cuisine'));
+const GpsMap = lazyRetry(() => import('@/components/GpsMap'));
+const AroundMe = lazyRetry(() => import('@/components/AroundMe'));
+const TripTracker = lazyRetry(() => import('@/components/TripTracker'));
+const Reviews = lazyRetry(() => import('@/components/Reviews'));
+const Community = lazyRetry(() => import('@/components/Community'));
+const QrCheckin = lazyRetry(() => import('@/components/QrCheckin'));
+const PhotoContest = lazyRetry(() => import('@/components/PhotoContest'));
+const Leaderboard = lazyRetry(() => import('@/components/Leaderboard'));
+const MiniGame = lazyRetry(() => import('@/components/MiniGame'));
+const ProfileDashboard = lazyRetry(() => import('@/components/ProfileDashboard'));
+const MuslimTravel = lazyRetry(() => import('@/components/MuslimTravel'));
+const TaxiBooking = lazyRetry(() => import('@/components/TaxiBooking'));
+const VisaAssistance = lazyRetry(() => import('@/components/VisaAssistance'));
+const FlightBooking = lazyRetry(() => import('@/components/FlightBooking'));
+const ToursSection = lazyRetry(() => import('@/components/ToursSection'));
+const TravelBuddyMatcher = lazyRetry(() => import('@/components/TravelBuddyMatcher'));
+const Guides = lazyRetry(() => import('@/components/Guides'));
+const Hotels = lazyRetry(() => import('@/components/Hotels'));
+const Transport = lazyRetry(() => import('@/components/Transport'));
+const InteractiveMap = lazyRetry(() => import('@/components/InteractiveMap'));
+const Essentials = lazyRetry(() => import('@/components/Essentials'));
+const PlanExplore = lazyRetry(() => import('@/components/planExplore/PlanExplore'));
+const AralExperience = lazyRetry(() => import('@/components/aralExperience/AralExperience'));
+const EmergencyKit = lazyRetry(() => import('@/components/EmergencyKit'));
+const BudgetPlanner = lazyRetry(() => import('@/components/BudgetPlanner'));
+const CurrencyConverter = lazyRetry(() => import('@/components/CurrencyConverter'));
+const ChatBot = lazyRetry(() => import('@/components/ChatBot'));
+const AdminDashboard = lazyRetry(() => import('@/components/AdminDashboard'));
+const HoneypotTrap = lazyRetry(() => import('@/components/HoneypotTrap'));
+const TourismAnalytics = lazyRetry(() => import('@/components/TourismAnalytics'));
+const HeritageStories = lazyRetry(() => import('@/components/heritage/HeritageStories'));
 
 const HONEYPOT_PATHS = [
   '/admin-panel-bypass',
