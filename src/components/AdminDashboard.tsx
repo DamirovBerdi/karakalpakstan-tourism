@@ -217,8 +217,10 @@ type Tab = 'overview' | 'receipts' | 'support' | 'visitors' | 'tourists' | 'spot
 export default function AdminDashboard() {
   const [authed, setAuthed] = useState(false);
   const [username, setUsername] = useState('');
-  const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
-  const [editingText, setEditingText] = useState<string>('');
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [loggingIn, setLoggingIn] = useState(false);
+  const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -517,6 +519,8 @@ function DashboardPanel({ onLogout, adminInfo }: { onLogout: () => void; adminIn
   const [supportMessages, setSupportMessages] = useState<AdminSupportMessage[]>([]);
   const [activeSupportSender, setActiveSupportSender] = useState<string | null>(null);
   const [adminReplyText, setAdminReplyText] = useState('');
+  const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState<string>('');
 
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
