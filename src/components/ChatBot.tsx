@@ -254,17 +254,25 @@ export default function ChatBot() {
         try {
           const cleanText = textToSpeak.replace(/\*\*/g, '').replace(/[•\-\*]/g, '').trim();
           const utterance = new SpeechSynthesisUtterance(cleanText);
-          const bcp47 = BCP47_MAP[chatLang] ?? 'en-US';
+          const bcp47 = BCP47_MAP[chatLang] ?? 'ru-RU';
           utterance.lang = bcp47;
           utterance.rate = 0.92;
           utterance.pitch = 0.92;
 
           const voices = window.speechSynthesis.getVoices();
           const langPrefix = bcp47.split('-')[0].toLowerCase();
+
+          // MUST FILTER BY LANGUAGE FIRST to prevent German/English voices from speaking Russian text
+          const langVoices = voices.filter((v) => {
+            const vLang = v.lang.toLowerCase().replace('_', '-');
+            return vLang === bcp47.toLowerCase() || vLang.startsWith(langPrefix);
+          });
+
           const matchedVoice =
-            voices.find((v) => v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('david') || v.name.toLowerCase().includes('google')) ??
-            voices.find((v) => v.lang.toLowerCase() === bcp47.toLowerCase()) ??
-            voices.find((v) => v.lang.toLowerCase().startsWith(langPrefix));
+            langVoices.find((v) => v.name.toLowerCase().includes('google') || v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('russian') || v.name.toLowerCase().includes('русский')) ??
+            langVoices[0] ??
+            voices.find((v) => v.lang.toLowerCase().replace('_', '-').startsWith(langPrefix));
+
           if (matchedVoice) utterance.voice = matchedVoice;
 
           utterance.onend = () => {
@@ -293,7 +301,7 @@ export default function ChatBot() {
       let cachedUrl = audioCacheRef.current.get(msgId);
       if (!cachedUrl) {
         try {
-          cachedUrl = (await generateGeminiAudio(text, 'Puck')) || undefined;
+          cachedUrl = (await generateGeminiAudio(text, 'Puck', chatLang)) || undefined;
           if (cachedUrl) {
             audioCacheRef.current.set(msgId, cachedUrl);
           }

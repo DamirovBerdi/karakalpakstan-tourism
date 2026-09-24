@@ -308,7 +308,8 @@ export function pcm16ToWavBlob(pcm16Base64: string, sampleRate = 24000): Blob {
 // Generate high-fidelity Gemini Voice Audio
 export async function generateGeminiAudio(
   text: string,
-  voiceName: 'Puck' | 'Fenrir' | 'Charon' | 'Kore' | 'Aoede' = 'Puck'
+  voiceName: 'Puck' | 'Fenrir' | 'Charon' | 'Kore' | 'Aoede' = 'Puck',
+  langCode: string = 'ru'
 ): Promise<string | null> {
   // Strip markdown formatting tokens for crystal clear natural speech
   const cleanSpeechText = text
@@ -325,6 +326,30 @@ export async function generateGeminiAudio(
     ? cleanSpeechText.slice(0, 1200) + '...'
     : cleanSpeechText;
 
+  const LANG_NAME_MAP: Record<string, string> = {
+    ru: 'Russian',
+    en: 'English',
+    uz: 'Uzbek',
+    kaa: 'Karakalpak',
+    de: 'German',
+    fr: 'French',
+    es: 'Spanish',
+    it: 'Italian',
+    pt: 'Portuguese',
+    nl: 'Dutch',
+    ja: 'Japanese',
+    ko: 'Korean',
+    zh: 'Chinese',
+    ar: 'Arabic',
+    tr: 'Turkish',
+    kk: 'Kazakh',
+    ky: 'Kyrgyz',
+    tk: 'Turkmen',
+  };
+
+  const languageName = LANG_NAME_MAP[langCode] || 'Russian';
+  const promptText = `Speak out loud fluently and naturally in ${languageName}:\n\n${spokenSnippet}`;
+
   const totalKeys = keyManager.getKeyCount();
 
   for (let attempt = 0; attempt < totalKeys; attempt++) {
@@ -339,7 +364,7 @@ export async function generateGeminiAudio(
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
 
         const requestBody = {
-          contents: [{ parts: [{ text: spokenSnippet }] }],
+          contents: [{ parts: [{ text: promptText }] }],
           generationConfig: {
             responseModalities: ['AUDIO'],
             speechConfig: {

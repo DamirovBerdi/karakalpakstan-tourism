@@ -224,7 +224,23 @@ function TranslatorWidget() {
   const speak = (text: string) => {
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang === 'kaa' ? 'uz' : lang;
+      const bcpMap: Record<string, string> = {
+        ru: 'ru-RU',
+        en: 'en-US',
+        uz: 'uz-UZ',
+        kaa: 'uz-UZ',
+      };
+      const bcp47 = bcpMap[lang] || 'ru-RU';
+      utterance.lang = bcp47;
+      const voices = speechSynthesis.getVoices();
+      const langPrefix = bcp47.split('-')[0].toLowerCase();
+      const langVoices = voices.filter((v) => {
+        const vLang = v.lang.toLowerCase().replace('_', '-');
+        return vLang === bcp47.toLowerCase() || vLang.startsWith(langPrefix);
+      });
+      if (langVoices.length > 0) {
+        utterance.voice = langVoices[0];
+      }
       speechSynthesis.speak(utterance);
     }
   };
