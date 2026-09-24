@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Users, MessageSquare, Send, Loader2, MapPin, Globe, Calendar, User as UserIcon, Shield, MessageCircle, Lock, LogIn } from 'lucide-react';
+import { Users, MessageSquare, Send, Loader2, MapPin, Globe, Calendar, User as UserIcon, Shield, MessageCircle, Lock, LogIn, Edit3, Trash2, Check, X, Pencil } from 'lucide-react';
 import { useLang } from '@/lib/LanguageContext';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -24,6 +24,8 @@ interface Message {
   read: boolean;
   sender_name?: string;
   created_at: string;
+  edited?: boolean;
+  edited_at?: string;
 }
 
 interface GroupMessage {
@@ -33,6 +35,8 @@ interface GroupMessage {
   sender_name: string;
   content: string;
   created_at: string;
+  edited?: boolean;
+  edited_at?: string;
 }
 
 const GROUP_CHANNELS = [
@@ -94,6 +98,8 @@ export default function Community() {
   });
   const [newAdminText, setNewAdminText] = useState('');
 
+  const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState<string>('');
   const [msgLoading, setMsgLoading] = useState(false);
 
   // Scroll anchors
@@ -131,6 +137,24 @@ export default function Community() {
           });
         }
       })
+      .on('broadcast', { event: 'edit_group_msg' }, ({ payload }) => {
+        if (payload?.id) {
+          setGroupMessages((prev) => {
+            const updated = prev.map((m) => (m.id === payload.id ? { ...m, content: payload.content, edited: true } : m));
+            try { localStorage.setItem('kk_all_group_messages', JSON.stringify(updated)); } catch {}
+            return updated;
+          });
+        }
+      })
+      .on('broadcast', { event: 'delete_group_msg' }, ({ payload }) => {
+        if (payload?.id) {
+          setGroupMessages((prev) => {
+            const updated = prev.filter((m) => m.id !== payload.id);
+            try { localStorage.setItem('kk_all_group_messages', JSON.stringify(updated)); } catch {}
+            return updated;
+          });
+        }
+      })
       .on('broadcast', { event: 'new_admin_msg' }, ({ payload }) => {
         if (payload) {
           setAdminMessages((prev) => {
@@ -139,6 +163,24 @@ export default function Community() {
             try {
               localStorage.setItem('kk_admin_support_messages', JSON.stringify(updated));
             } catch {}
+            return updated;
+          });
+        }
+      })
+      .on('broadcast', { event: 'edit_admin_msg' }, ({ payload }) => {
+        if (payload?.id) {
+          setAdminMessages((prev) => {
+            const updated = prev.map((m) => (m.id === payload.id ? { ...m, content: payload.content, edited: true } : m));
+            try { localStorage.setItem('kk_admin_support_messages', JSON.stringify(updated)); } catch {}
+            return updated;
+          });
+        }
+      })
+      .on('broadcast', { event: 'delete_admin_msg' }, ({ payload }) => {
+        if (payload?.id) {
+          setAdminMessages((prev) => {
+            const updated = prev.filter((m) => m.id !== payload.id);
+            try { localStorage.setItem('kk_admin_support_messages', JSON.stringify(updated)); } catch {}
             return updated;
           });
         }
@@ -396,6 +438,124 @@ export default function Community() {
     setMsgLoading(false);
   };
 
+  const handleEditGroupMessage = async (msgId: string, newText: string) => {
+    if (!newText.trim()) return;
+    const updated = groupMessages.map((m) =>
+      m.id === msgId ? { ...m, content: newText.trim(), edited: true, edited_at: new Date().toISOString() } : m
+    );
+    setGroupMessages(updated);
+    setEditingMsgId(null);
+
+    try { localStorage.setItem('kk_all_group_messages', JSON.stringify(updated)); } catch {}
+
+    try {
+      supabase.channel('kk_community_realtime').send({
+        type: 'broadcast',
+        event: 'edit_group_msg',
+        payload: { id: msgId, content: newText.trim(), edited: true },
+      });
+    } catch {}
+
+    try {
+      const channelMsgs = updated.filter((m) => m.channel === activeChannel);
+      await supabase.from('admin_config').upsert(
+        {
+          key: `group_msg_${activeChannel}`,
+          value: JSON.stringify(channelMsgs),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'key' }
+      );
+    } catch {}
+  };
+
+  const handleDeleteGroupMessage = async (msgId: string) => {
+    const updated = groupMessages.filter((m) => m.id !== msgId);
+    setGroupMessages(updated);
+    if (editingMsgId === msgId) setEditingMsgId(null);
+
+    try { localStorage.setItem('kk_all_group_messages', JSON.stringify(updated)); } catch {}
+
+    try {
+      supabase.channel('kk_community_realtime').send({
+        type: 'broadcast',
+        event: 'delete_group_msg',
+        payload: { id: msgId },
+      });
+    } catch {}
+
+    try {
+      const channelMsgs = updated.filter((m) => m.channel === activeChannel);
+      await supabase.from('admin_config').upsert(
+        {
+          key: `group_msg_${activeChannel}`,
+          value: JSON.stringify(channelMsgs),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'key' }
+      );
+    } catch {}
+  };
+
+  const handleEditAdminMessage = async (msgId: string, newText: string) => {
+    if (!newText.trim()) return;
+    const updated = adminMessages.map((m) =>
+      m.id === msgId ? { ...m, content: newText.trim(), edited: true, edited_at: new Date().toISOString() } : m
+    );
+    setAdminMessages(updated);
+    setEditingMsgId(null);
+
+    try { localStorage.setItem('kk_admin_support_messages', JSON.stringify(updated)); } catch {}
+
+    try {
+      supabase.channel('kk_community_realtime').send({
+        type: 'broadcast',
+        event: 'edit_admin_msg',
+        payload: { id: msgId, content: newText.trim(), edited: true },
+      });
+    } catch {}
+
+    try {
+      const key = user ? `support_chats_${user.id}` : 'support_chats_global';
+      await supabase.from('admin_config').upsert(
+        {
+          key,
+          value: JSON.stringify(updated),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'key' }
+      );
+    } catch {}
+  };
+
+  const handleDeleteAdminMessage = async (msgId: string) => {
+    const updated = adminMessages.filter((m) => m.id !== msgId);
+    setAdminMessages(updated);
+    if (editingMsgId === msgId) setEditingMsgId(null);
+
+    try { localStorage.setItem('kk_admin_support_messages', JSON.stringify(updated)); } catch {}
+
+    try {
+      supabase.channel('kk_community_realtime').send({
+        type: 'broadcast',
+        event: 'delete_admin_msg',
+        payload: { id: msgId },
+      });
+    } catch {}
+
+    try {
+      const key = user ? `support_chats_${user.id}` : 'support_chats_global';
+      await supabase.from('admin_config').upsert(
+        {
+          key,
+          value: JSON.stringify(updated),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'key' }
+      );
+    } catch {}
+  };
+
   const formatTime = (iso: string) => {
     const d = new Date(iso);
     return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
@@ -493,10 +653,11 @@ export default function Community() {
                   .filter((m) => m.channel === activeChannel)
                   .map((m) => {
                     const isMe = m.sender_id === user?.id;
+                    const isEditing = editingMsgId === m.id;
                     return (
                       <div
                         key={m.id}
-                        className={`rounded-xl p-3 ring-1 space-y-1 transition-all ${
+                        className={`group relative rounded-xl p-3 ring-1 space-y-1 transition-all ${
                           isMe
                             ? 'bg-deepblue-50 border-l-4 border-deepblue-600 ring-deepblue-200 ml-6'
                             : 'bg-sand-50 ring-sand-200 mr-6'
@@ -506,9 +667,57 @@ export default function Community() {
                           <span className="font-bold text-deepblue-900 flex items-center gap-1.5">
                             <UserIcon className="h-3.5 w-3.5 text-deepblue-500" /> {m.sender_name} {isMe && '(Вы)'}
                           </span>
-                          <span className="text-deepblue-400 text-[10px]">{formatTime(m.created_at)}</span>
+                          <div className="flex items-center gap-2">
+                            {m.edited && <span className="text-[10px] italic text-deepblue-400">(изменено)</span>}
+                            <span className="text-deepblue-400 text-[10px]">{formatTime(m.created_at)}</span>
+                            {isMe && !isEditing && (
+                              <div className="hidden group-hover:flex items-center gap-1.5 ml-2">
+                                <button
+                                  onClick={() => { setEditingMsgId(m.id); setEditingText(m.content); }}
+                                  className="text-deepblue-400 hover:text-deepblue-700 p-0.5"
+                                  title="Редактировать"
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteGroupMessage(m.id)}
+                                  className="text-red-400 hover:text-red-600 p-0.5"
+                                  title="Удалить"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-xs text-deepblue-800 leading-relaxed">{m.content}</p>
+
+                        {isEditing ? (
+                          <div className="flex items-center gap-1.5 mt-2">
+                            <input
+                              type="text"
+                              value={editingText}
+                              onChange={(e) => setEditingText(e.target.value)}
+                              className="flex-1 rounded-lg border border-sand-300 bg-white px-2.5 py-1 text-xs text-deepblue-900 outline-none"
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => handleEditGroupMessage(m.id, editingText)}
+                              className="rounded-lg bg-emerald-600 p-1 text-white hover:bg-emerald-700"
+                              title="Сохранить"
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setEditingMsgId(null)}
+                              className="rounded-lg bg-sand-200 p-1 text-deepblue-700 hover:bg-sand-300"
+                              title="Отмена"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-deepblue-800 leading-relaxed">{m.content}</p>
+                        )}
                       </div>
                     );
                   })}
@@ -571,10 +780,12 @@ export default function Community() {
             <div ref={adminScrollRef} className="h-72 overflow-y-auto space-y-3 pr-2 scroll-smooth">
               {adminMessages.map((m) => {
                 const isAdmin = m.sender_id === 'admin' || m.sender_id === 'admin_support';
+                const isMe = m.sender_id === user?.id || (!isAdmin && user);
+                const isEditing = editingMsgId === m.id;
                 return (
                   <div key={m.id} className={`flex ${isAdmin ? 'justify-start' : 'justify-end'}`}>
                     <div
-                      className={`max-w-[85%] rounded-2xl p-3 text-xs space-y-1 ${
+                      className={`group relative max-w-[85%] rounded-2xl p-3 text-xs space-y-1 ${
                         isAdmin
                           ? 'bg-deepblue-900 text-white shadow-sm ring-1 ring-deepblue-800'
                           : 'bg-terracotta-500 text-white shadow-sm'
@@ -585,9 +796,57 @@ export default function Community() {
                           {isAdmin ? <Shield className="h-3 w-3 text-amber-400" /> : <UserIcon className="h-3 w-3" />}
                           {isAdmin ? 'Super Admin' : m.sender_name || 'Вы'}
                         </span>
-                        <span>{formatTime(m.created_at)}</span>
+                        <div className="flex items-center gap-1.5">
+                          {m.edited && <span className="italic opacity-70">(изменено)</span>}
+                          <span>{formatTime(m.created_at)}</span>
+                          {isMe && !isEditing && (
+                            <div className="hidden group-hover:flex items-center gap-1 ml-1.5">
+                              <button
+                                onClick={() => { setEditingMsgId(m.id); setEditingText(m.content); }}
+                                className="opacity-80 hover:opacity-100 p-0.5"
+                                title="Редактировать"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteAdminMessage(m.id)}
+                                className="opacity-80 hover:opacity-100 p-0.5"
+                                title="Удалить"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <p className="leading-relaxed">{m.content}</p>
+
+                      {isEditing ? (
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <input
+                            type="text"
+                            value={editingText}
+                            onChange={(e) => setEditingText(e.target.value)}
+                            className="flex-1 rounded-lg border border-sand-300 bg-white px-2.5 py-1 text-xs text-deepblue-900 outline-none"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => handleEditAdminMessage(m.id, editingText)}
+                            className="rounded-lg bg-emerald-600 p-1 text-white hover:bg-emerald-700"
+                            title="Сохранить"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setEditingMsgId(null)}
+                            className="rounded-lg bg-sand-200 p-1 text-deepblue-700 hover:bg-sand-300"
+                            title="Отмена"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="leading-relaxed">{m.content}</p>
+                      )}
                     </div>
                   </div>
                 );

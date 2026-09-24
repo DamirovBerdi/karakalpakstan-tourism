@@ -37,6 +37,30 @@ interface RawGuide {
   useEffect(() => {
     async function fetchGuides() {
       try {
+        // 1. Check admin_config for master custom_guides first
+        const { data: cfg } = await supabase.from('admin_config').select('value').eq('key', 'custom_guides').maybeSingle();
+        if (cfg?.value) {
+          const parsed = JSON.parse(cfg.value);
+          if (Array.isArray(parsed)) {
+            const mapped: Guide[] = (parsed as RawGuide[]).filter((g) => g.status !== 'inactive').map((g, idx: number) => ({
+              id: typeof g.id === 'number' ? g.id : idx + 1,
+              name: g.name,
+              photo: g.photo,
+              rating: g.rating,
+              reviews: g.reviews_count || 1,
+              languages: g.languages || [],
+              specialties: g.specialties || [],
+              dailyRate: g.daily_rate || g.dailyRate || 45,
+              phone: g.phone || '',
+              whatsapp: g.whatsapp || '',
+            }));
+            setAllGuides(mapped);
+            localStorage.setItem('kk_custom_guides', JSON.stringify(mapped));
+            return;
+          }
+        }
+
+        // 2. Fallback to Supabase guides table
         const { data, error } = await supabase.from('guides').select('*').eq('status', 'active');
         if (!error && data && data.length > 0) {
           const mapped: Guide[] = (data as RawGuide[]).map((g) => ({
@@ -55,42 +79,29 @@ interface RawGuide {
           localStorage.setItem('kk_custom_guides', JSON.stringify(mapped));
           return;
         }
-
-        const { data: cfg } = await supabase.from('admin_config').select('value').eq('key', 'custom_guides').maybeSingle();
-        if (cfg?.value) {
-          const parsed = JSON.parse(cfg.value);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const mapped: Guide[] = (parsed as RawGuide[]).filter((g) => g.status !== 'inactive').map((g, idx: number) => ({
-              id: idx + 1,
-              name: g.name,
-              photo: g.photo,
-              rating: g.rating,
-              reviews: g.reviews_count || 1,
-              languages: g.languages || [],
-              specialties: g.specialties || [],
-              dailyRate: g.daily_rate || g.dailyRate || 45,
-              phone: g.phone || '',
-              whatsapp: g.whatsapp || '',
-            }));
-            setAllGuides(mapped);
-            localStorage.setItem('kk_custom_guides', JSON.stringify(mapped));
-          }
-        }
       } catch {
-        // Keep cached/static guides on network failure
+        // Keep current state on error
       }
     }
 
     fetchGuides();
 
-    // Listen for real-time updates from AdminDashboard in the same window/tab
+    // Listen for local and realtime events
     const handleGuidesUpdated = () => fetchGuides();
     window.addEventListener('kk:guides-updated', handleGuidesUpdated);
     window.addEventListener('storage', handleGuidesUpdated);
 
+    const channel = supabase
+      .channel('kk_community_realtime')
+      .on('broadcast', { event: 'custom_guides_updated' }, () => {
+        fetchGuides();
+      })
+      .subscribe();
+
     return () => {
       window.removeEventListener('kk:guides-updated', handleGuidesUpdated);
       window.removeEventListener('storage', handleGuidesUpdated);
+      supabase.removeChannel(channel);
     };
   }, []);
 

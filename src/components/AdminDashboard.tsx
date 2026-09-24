@@ -217,10 +217,8 @@ type Tab = 'overview' | 'receipts' | 'support' | 'visitors' | 'tourists' | 'spot
 export default function AdminDashboard() {
   const [authed, setAuthed] = useState(false);
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
-  const [loggingIn, setLoggingIn] = useState(false);
-  const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null);
+  const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState<string>('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -248,12 +246,15 @@ export default function AdminDashboard() {
           .maybeSingle();
 
         if (adminRecord) {
-          setAdminInfo({
+          const info = {
             username: uInput,
             role: adminRecord.role || 'Super Admin',
             displayName: adminRecord.display_name || uInput,
             email: adminRecord.email,
-          });
+          };
+          setAdminInfo(info);
+          sessionStorage.setItem('kk_admin_authed', 'true');
+          sessionStorage.setItem('kk_admin_info', JSON.stringify(info));
           setAuthed(true);
           setLoggingIn(false);
           return;
@@ -274,12 +275,15 @@ export default function AdminDashboard() {
       const validPasswords = ['Damiyr_2010_2016_', '@azada_10', 'Admin2026!', 'admin', 'admin123', 'SuperAdmin2026!'];
 
       if (allowedAdmins.includes(uInput) && validPasswords.includes(pInput)) {
-        setAdminInfo({
+        const info = {
           username: uInput,
           role: 'Super Admin',
           displayName: uInput === 'damirovberdi01@gmail.com' ? 'Берди Дамиров' : uInput === 'azadajadikova@gmail.com' ? 'Азада Ядикова' : 'Главный Администратор',
           email: uInput.includes('@') ? uInput : `${uInput}@karakalpak.travel`,
-        });
+        };
+        setAdminInfo(info);
+        sessionStorage.setItem('kk_admin_authed', 'true');
+        sessionStorage.setItem('kk_admin_info', JSON.stringify(info));
         setAuthed(true);
         setLoggingIn(false);
         return;
@@ -294,6 +298,8 @@ export default function AdminDashboard() {
   };
 
   const handleLogout = async () => {
+    sessionStorage.removeItem('kk_admin_authed');
+    sessionStorage.removeItem('kk_admin_info');
     try {
       await supabase.auth.signOut();
     } catch {
@@ -309,6 +315,13 @@ export default function AdminDashboard() {
     let mounted = true;
     async function verifyBackendSession() {
       try {
+        const isSessionAuthed = sessionStorage.getItem('kk_admin_authed') === 'true';
+        if (!isSessionAuthed) {
+          setAuthed(false);
+          setAdminInfo(null);
+          return;
+        }
+
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user && mounted) {
           const user = session.user;
@@ -318,18 +331,43 @@ export default function AdminDashboard() {
             .or(`user_id.eq.${user.id},email.eq.${user.email}`)
             .maybeSingle();
 
-          if (adminRecord && mounted) {
-            setAdminInfo({
+          const allowedAdmins = [
+            'damirovberdi01@gmail.com',
+            'azadajadikova@gmail.com',
+            'damirovberdi00@gmail.com',
+            'admin@karakalpak.travel',
+            'superadmin@karakalpak.travel'
+          ];
+
+          if ((adminRecord || (user.email && allowedAdmins.includes(user.email.toLowerCase()))) && mounted) {
+            const info = {
               username: user.email?.split('@')[0] || 'admin',
-              role: adminRecord.role || 'Super Admin',
-              displayName: adminRecord.display_name || 'Admin',
-              email: adminRecord.email,
-            });
+              role: adminRecord?.role || 'Super Admin',
+              displayName: adminRecord?.display_name || user.email?.split('@')[0] || 'Admin',
+              email: adminRecord?.email || user.email,
+            };
+            setAdminInfo(info);
             setAuthed(true);
+            return;
           }
         }
+
+        const storedInfo = sessionStorage.getItem('kk_admin_info');
+        if (storedInfo && isSessionAuthed && mounted) {
+          try {
+            setAdminInfo(JSON.parse(storedInfo));
+            setAuthed(true);
+            return;
+          } catch {}
+        }
+
+        setAuthed(false);
+        setAdminInfo(null);
+        sessionStorage.removeItem('kk_admin_authed');
       } catch {
-        // ignore
+        setAuthed(false);
+        setAdminInfo(null);
+        sessionStorage.removeItem('kk_admin_authed');
       }
     }
     verifyBackendSession();
@@ -787,6 +825,14 @@ function DashboardPanel({ onLogout, adminInfo }: { onLogout: () => void; adminIn
       updated_at: new Date().toISOString(),
     });
 
+    try {
+      supabase.channel('kk_community_realtime').send({
+        type: 'broadcast',
+        event: 'custom_guides_updated',
+        payload: updated,
+      });
+    } catch {}
+
     setShowAddGuideModal(false);
     setGuideName('');
     setGuidePhoto('');
@@ -810,6 +856,64 @@ function DashboardPanel({ onLogout, adminInfo }: { onLogout: () => void; adminIn
       value: JSON.stringify(updated),
       updated_at: new Date().toISOString(),
     });
+
+    try {
+      supabase.channel('kk_community_realtime').send({
+        type: 'broadcast',
+        event: 'custom_guides_updated',
+        payload: updated,
+      });
+    } catch {}
+  };
+
+  const handleEditAdminSupportMsg = async (msgId: string, newText: string) => {
+    if (!newText.trim() || !activeSupportSender) return;
+    const updated = supportMessages.map((m) =>
+      m.id === msgId ? { ...m, content: newText.trim() } : m
+    );
+    setSupportMessages(updated);
+    setEditingMsgId(null);
+
+    const threadKey = activeSupportSender === 'global' ? 'support_chats_global' : `support_chats_${activeSupportSender}`;
+    const threadMessages = updated
+      .filter((m) => m.sender_id === activeSupportSender || m.recipient_id === activeSupportSender);
+
+    await supabase.from('admin_config').upsert(
+      { key: threadKey, value: JSON.stringify(threadMessages), updated_at: new Date().toISOString() },
+      { onConflict: 'key' }
+    );
+
+    try {
+      supabase.channel('kk_community_realtime').send({
+        type: 'broadcast',
+        event: 'edit_admin_msg',
+        payload: { id: msgId, content: newText.trim(), edited: true },
+      });
+    } catch {}
+  };
+
+  const handleDeleteAdminSupportMsg = async (msgId: string) => {
+    if (!activeSupportSender) return;
+    const updated = supportMessages.filter((m) => m.id !== msgId);
+    setSupportMessages(updated);
+    if (editingMsgId === msgId) setEditingMsgId(null);
+
+    const threadKey = activeSupportSender === 'global' ? 'support_chats_global' : `support_chats_${activeSupportSender}`;
+    const threadMessages = updated
+      .filter((m) => m.sender_id === activeSupportSender || m.recipient_id === activeSupportSender);
+
+    await supabase.from('admin_config').upsert(
+      { key: threadKey, value: JSON.stringify(threadMessages), updated_at: new Date().toISOString() },
+      { onConflict: 'key' }
+    );
+
+    try {
+      supabase.channel('kk_community_realtime').send({
+        type: 'broadcast',
+        event: 'delete_admin_msg',
+        payload: { id: msgId },
+      });
+    } catch {}
   };
 
   const handleSaveAgency = async (e: React.FormEvent) => {
@@ -1427,26 +1531,72 @@ function DashboardPanel({ onLogout, adminInfo }: { onLogout: () => void; adminIn
                       .filter(m => m.sender_id === activeSupportSender || m.recipient_id === activeSupportSender)
                       .map((msg) => {
                         const isAdmin = msg.sender_id === 'admin_support' || msg.sender_name.includes('Super Admin') || msg.sender_name.includes('Azada') || msg.sender_name.includes('Damir');
+                        const isEditing = editingMsgId === msg.id;
                         return (
                           <div
                             key={msg.id}
-                            className={`flex flex-col ${isAdmin ? 'items-end' : 'items-start'}`}
+                            className={`group relative flex flex-col ${isAdmin ? 'items-end' : 'items-start'}`}
                           >
                             <div className="flex items-center gap-1.5 mb-1">
                               <span className="text-[10px] font-bold text-deepblue-500">{msg.sender_name}</span>
                               <span className="text-[10px] text-deepblue-400">
                                 {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </span>
+                              {!isEditing && (
+                                <div className="hidden group-hover:flex items-center gap-1 ml-1.5">
+                                  <button
+                                    onClick={() => { setEditingMsgId(msg.id); setEditingText(msg.content); }}
+                                    className="text-deepblue-400 hover:text-deepblue-700 p-0.5"
+                                    title="Редактировать"
+                                  >
+                                    <Plus className="h-3 w-3 rotate-45 hidden" />
+                                    <span className="text-[10px] underline">изм.</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteAdminSupportMsg(msg.id)}
+                                    className="text-red-400 hover:text-red-600 p-0.5"
+                                    title="Удалить"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              )}
                             </div>
-                            <div
-                              className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-xs shadow-xs ${
-                                isAdmin
-                                  ? 'bg-deepblue-900 text-white rounded-tr-none'
-                                  : 'bg-sand-100 text-deepblue-900 border border-sand-200 rounded-tl-none'
-                              }`}
-                            >
-                              {msg.content}
-                            </div>
+                            {isEditing ? (
+                              <div className="flex items-center gap-1.5 max-w-[80%] my-1">
+                                <input
+                                  type="text"
+                                  value={editingText}
+                                  onChange={(e) => setEditingText(e.target.value)}
+                                  className="flex-1 rounded-lg border border-sand-300 bg-white px-2.5 py-1 text-xs text-deepblue-900 outline-none"
+                                  autoFocus
+                                />
+                                <button
+                                  onClick={() => handleEditAdminSupportMsg(msg.id, editingText)}
+                                  className="rounded-lg bg-emerald-600 p-1 text-white hover:bg-emerald-700"
+                                  title="Сохранить"
+                                >
+                                  <Check className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => setEditingMsgId(null)}
+                                  className="rounded-lg bg-sand-200 p-1 text-deepblue-700 hover:bg-sand-300"
+                                  title="Отмена"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div
+                                className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-xs shadow-xs ${
+                                  isAdmin
+                                    ? 'bg-deepblue-900 text-white rounded-tr-none'
+                                    : 'bg-sand-100 text-deepblue-900 border border-sand-200 rounded-tl-none'
+                                }`}
+                              >
+                                {msg.content}
+                              </div>
+                            )}
                           </div>
                         );
                       })}
