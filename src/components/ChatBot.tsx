@@ -95,6 +95,7 @@ export default function ChatBot() {
   const recognitionRef = useRef<SpeechRecognitionType | null>(null);
   const initialized = useRef(false);
   const langDropdownRef = useRef<HTMLDivElement>(null);
+  const audioCacheRef = useRef<Map<number, string>>(new Map());
 
   const speechRecognitionSupported = useMemo(
     () => getSpeechRecognitionCtor() !== null,
@@ -242,81 +243,95 @@ export default function ChatBot() {
       setAudioErrorId(null);
       setAudioLoadingId(msgId);
 
-      // 1. First priority: High-fidelity Gemini Neural Voice (Fenrir: Cozy, magnetic, resonant voice)
-      try {
-        const geminiAudioUrl = await generateGeminiAudio(text, 'Fenrir');
-        if (geminiAudioUrl) {
-          const audio = new Audio(geminiAudioUrl);
-          audioElementRef.current = audio;
-
-          audio.onended = () => {
-            setAudioPlayingId(null);
-            setAudioLoadingId(null);
-            audioElementRef.current = null;
-            URL.revokeObjectURL(geminiAudioUrl);
-          };
-
-          audio.onerror = () => {
-            setAudioPlayingId(null);
-            setAudioLoadingId(null);
-            audioElementRef.current = null;
-            URL.revokeObjectURL(geminiAudioUrl);
-          };
-
-          try {
-            await audio.play();
-            setAudioPlayingId(msgId);
-            setAudioLoadingId(null);
-            return;
-          } catch (playErr) {
-            console.warn('[AI Guide] audio.play() was interrupted or blocked:', playErr);
-          }
+      const startWebSpeechFallback = (id: number, textToSpeak: string) => {
+        setAudioLoadingId(null);
+        if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+          setAudioErrorId(id);
+          setAudioSupported(false);
+          return;
         }
-      } catch (err) {
-        console.warn('[AI Guide] Gemini Neural TTS error, falling back to Web Speech:', err);
+
+        try {
+          const cleanText = textToSpeak.replace(/\*\*/g, '').replace(/[•\-\*]/g, '').trim();
+          const utterance = new SpeechSynthesisUtterance(cleanText);
+          const bcp47 = BCP47_MAP[chatLang] ?? 'en-US';
+          utterance.lang = bcp47;
+          utterance.rate = 0.92;
+          utterance.pitch = 0.92;
+
+          const voices = window.speechSynthesis.getVoices();
+          const langPrefix = bcp47.split('-')[0].toLowerCase();
+          const matchedVoice =
+            voices.find((v) => v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('david') || v.name.toLowerCase().includes('google')) ??
+            voices.find((v) => v.lang.toLowerCase() === bcp47.toLowerCase()) ??
+            voices.find((v) => v.lang.toLowerCase().startsWith(langPrefix));
+          if (matchedVoice) utterance.voice = matchedVoice;
+
+          utterance.onend = () => {
+            setAudioPlayingId(null);
+            setAudioLoadingId(null);
+            utteranceRef.current = null;
+          };
+          utterance.onerror = () => {
+            setAudioErrorId(id);
+            setAudioPlayingId(null);
+            setAudioLoadingId(null);
+            utteranceRef.current = null;
+          };
+
+          utteranceRef.current = utterance;
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(utterance);
+          setAudioPlayingId(id);
+        } catch {
+          setAudioErrorId(id);
+          setAudioLoadingId(null);
+        }
+      };
+
+      // 1. Check RAM audio blob cache first to prevent re-downloading on weak Wi-Fi
+      let cachedUrl = audioCacheRef.current.get(msgId);
+      if (!cachedUrl) {
+        try {
+          cachedUrl = (await generateGeminiAudio(text, 'Fenrir')) || undefined;
+          if (cachedUrl) {
+            audioCacheRef.current.set(msgId, cachedUrl);
+          }
+        } catch {
+          // Network error: fall back seamlessly to offline Web Speech
+        }
       }
 
-      setAudioLoadingId(null);
+      if (cachedUrl) {
+        const audio = new Audio(cachedUrl);
+        audioElementRef.current = audio;
 
-      // 2. Fallback: Browser Web Speech API
-      if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-        setAudioErrorId(msgId);
-        setAudioSupported(false);
-        return;
-      }
-
-      try {
-        const cleanText = text.replace(/\*\*/g, '').replace(/[•\-\*]/g, '').trim();
-        const utterance = new SpeechSynthesisUtterance(cleanText);
-        const bcp47 = BCP47_MAP[chatLang] ?? 'en-US';
-        utterance.lang = bcp47;
-        utterance.rate = 0.92;
-        utterance.pitch = 0.92;
-
-        const voices = window.speechSynthesis.getVoices();
-        const langPrefix = bcp47.split('-')[0].toLowerCase();
-        const matchedVoice =
-          voices.find((v) => v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('david') || v.name.toLowerCase().includes('google')) ??
-          voices.find((v) => v.lang.toLowerCase() === bcp47.toLowerCase()) ??
-          voices.find((v) => v.lang.toLowerCase().startsWith(langPrefix));
-        if (matchedVoice) utterance.voice = matchedVoice;
-
-        utterance.onend = () => {
+        audio.onended = () => {
           setAudioPlayingId(null);
-          utteranceRef.current = null;
-        };
-        utterance.onerror = () => {
-          setAudioErrorId(msgId);
-          setAudioPlayingId(null);
-          utteranceRef.current = null;
+          setAudioLoadingId(null);
+          audioElementRef.current = null;
         };
 
-        utteranceRef.current = utterance;
-        window.speechSynthesis.speak(utterance);
-        setAudioPlayingId(msgId);
-      } catch {
-        setAudioErrorId(msgId);
+        audio.onerror = () => {
+          // If network error during playback stream, fall back to offline Web Speech seamlessly
+          console.warn('[AI Guide] Audio stream error on weak Wi-Fi, switching to offline speech synthesis');
+          audioElementRef.current = null;
+          startWebSpeechFallback(msgId, text);
+        };
+
+        try {
+          await audio.play();
+          setAudioPlayingId(msgId);
+          setAudioLoadingId(null);
+          return;
+        } catch {
+          startWebSpeechFallback(msgId, text);
+          return;
+        }
       }
+
+      // If neural audio fetch failed or network dropped, play offline speech synthesis immediately
+      startWebSpeechFallback(msgId, text);
     },
     [audioPlayingId, chatLang, stopAudio]
   );

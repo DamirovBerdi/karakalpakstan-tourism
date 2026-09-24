@@ -329,56 +329,62 @@ export async function generateGeminiAudio(
 
   for (let attempt = 0; attempt < totalKeys; attempt++) {
     const { key } = keyManager.getActiveKey();
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second audio generation window
+    
+    // Automatic retry loop for weak Wi-Fi connection fluctuations
+    for (let retry = 0; retry < 2; retry++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second audio generation window
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
 
-      const requestBody = {
-        contents: [{ parts: [{ text: spokenSnippet }] }],
-        generationConfig: {
-          responseModalities: ['AUDIO'],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: {
-                voiceName,
+        const requestBody = {
+          contents: [{ parts: [{ text: spokenSnippet }] }],
+          generationConfig: {
+            responseModalities: ['AUDIO'],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: {
+                  voiceName,
+                },
               },
             },
           },
-        },
-      };
+        };
 
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-        signal: controller.signal,
-      });
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+          signal: controller.signal,
+        });
 
-      clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
 
-      if (res.status === 429 || res.status === 403) {
+        if (res.status === 429 || res.status === 403) {
+          keyManager.markCurrentKeyExhausted();
+          break;
+        }
+
+        if (!res.ok) {
+          keyManager.markCurrentKeyExhausted();
+          break;
+        }
+
+        const data = await res.json();
+        const pcmBase64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+
+        if (pcmBase64 && typeof pcmBase64 === 'string') {
+          const wavBlob = pcm16ToWavBlob(pcmBase64, 24000);
+          return URL.createObjectURL(wavBlob);
+        }
+
         keyManager.markCurrentKeyExhausted();
-        continue;
+        break;
+      } catch {
+        // Temporary Wi-Fi glitch, wait 400ms before retry
+        await new Promise((r) => setTimeout(r, 400));
       }
-
-      if (!res.ok) {
-        keyManager.markCurrentKeyExhausted();
-        continue;
-      }
-
-      const data = await res.json();
-      const pcmBase64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-
-      if (pcmBase64 && typeof pcmBase64 === 'string') {
-        const wavBlob = pcm16ToWavBlob(pcmBase64, 24000);
-        return URL.createObjectURL(wavBlob);
-      }
-
-      keyManager.markCurrentKeyExhausted();
-    } catch {
-      keyManager.markCurrentKeyExhausted();
     }
   }
 
