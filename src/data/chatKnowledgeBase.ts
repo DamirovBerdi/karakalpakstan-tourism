@@ -599,7 +599,11 @@ Sizdi eń qızıqtırǵanı neme?`,
 export const knowledgeBase: KnowledgeEntry[] = [
   {
     id: 'aral-sea',
-    keywords: ['aral', 'aral sea', 'aralsk', 'aral sea history', 'history of aral', 'aral sea story', 'aral sea tragedy', 'арал', 'аральск', 'аральское море', 'орол', 'орол денизи', 'aral teñizi'],
+    keywords: [
+      'aral', 'aral sea', 'aralsk', 'aral sea history', 'history of aral', 'aral sea story', 'aral sea tragedy',
+      'арал', 'арала', 'аралу', 'аралом', 'аральск', 'аральское', 'аральского', 'море', 'моря', 'история', 'истории', 'историй',
+      'орол', 'орол денизи', 'aral teñizi'
+    ],
     ...aralSeaHistory,
   },
   {
@@ -669,7 +673,9 @@ export function findResponse(text: string, lang: 'en' | 'ru' | 'uz' | 'kaa'): st
     let score = 0;
     for (const keyword of entry.keywords) {
       if (normalized.includes(keyword)) {
-        score += keyword.length;
+        // Boost non-greeting topic matches so specific questions win over generic greetings
+        const multiplier = entry.id === 'greeting' ? 1 : 10;
+        score += keyword.length * multiplier;
       }
     }
     if (score > bestScore) {

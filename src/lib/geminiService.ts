@@ -26,6 +26,16 @@ const OBFUSCATED_GEMINI_POOL: string[] = [
 ];
 
 function getDecodedTokens(): string[] {
+  let customKeys: string[] = [];
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem('kk_custom_gemini_keys') : null;
+    if (raw) {
+      customKeys = raw.split(/[\n,;\s]+/).map((k) => k.trim()).filter(Boolean);
+    }
+  } catch {
+    // ignore
+  }
+
   // First check if environment variables are provided
   const envKeys = [
     import.meta.env.VITE_GEMINI_API_KEY_1,
@@ -34,12 +44,16 @@ function getDecodedTokens(): string[] {
     import.meta.env.VITE_GEMINI_API_KEY_4,
   ].filter(Boolean) as string[];
 
-  if (envKeys.length > 0) {
-    return envKeys.map((k) => (k.startsWith('AQ.') ? k : deobfuscateToken(k)));
-  }
+  const processedEnvKeys = envKeys.map((k) => {
+    if (k.startsWith('AIza') || k.startsWith('AQ.')) return k;
+    return deobfuscateToken(k);
+  }).filter(Boolean);
 
-  // Deobfuscate from encrypted internal pool
-  return OBFUSCATED_GEMINI_POOL.map(deobfuscateToken).filter(Boolean);
+  const poolKeys = OBFUSCATED_GEMINI_POOL.map(deobfuscateToken).filter(Boolean);
+
+  const combined = [...customKeys, ...processedEnvKeys, ...poolKeys];
+  const unique = Array.from(new Set(combined));
+  return unique.length > 0 ? unique : poolKeys;
 }
 
 const STORAGE_ACTIVE_KEY_INDEX = 'kk_gemini_active_idx';
@@ -59,6 +73,11 @@ class GeminiKeyManager {
     const saved = localStorage.getItem(STORAGE_ACTIVE_KEY_INDEX);
     const parsed = saved ? parseInt(saved, 10) : 0;
     this.currentIndex = !isNaN(parsed) && parsed >= 0 && parsed < this.keys.length ? parsed : 0;
+  }
+
+  public reloadKeys() {
+    this.keys = getDecodedTokens();
+    this.currentIndex = 0;
   }
 
   private getExhaustedMap(): ExhaustedRecord {
@@ -97,6 +116,7 @@ class GeminiKeyManager {
   }
 
   public getActiveKey(): { key: string; index: number } {
+    this.keys = getDecodedTokens(); // Reload live in case custom key added
     for (let i = 0; i < this.keys.length; i++) {
       const candidateIndex = (this.currentIndex + i) % this.keys.length;
       if (this.isKeyUsable(candidateIndex)) {
@@ -131,6 +151,19 @@ class GeminiKeyManager {
 }
 
 export const keyManager = new GeminiKeyManager();
+
+if (typeof window !== 'undefined') {
+  (window as any).setGeminiApiKey = (key: string) => {
+    try {
+      localStorage.setItem('kk_custom_gemini_keys', key.trim());
+      keyManager.reloadKeys();
+      console.log('✅ Gemini API key successfully updated!');
+      return 'Key updated!';
+    } catch (e) {
+      return 'Failed to save key: ' + e;
+    }
+  };
+}
 
 // =========================================================================
 // ULTRA-STRICT SYSTEM PROMPT & SECURITY GUARDRAILS FOR TOURISM AI GUIDE
