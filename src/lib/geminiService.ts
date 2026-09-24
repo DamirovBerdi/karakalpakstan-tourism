@@ -216,7 +216,7 @@ export async function askGeminiGuide(
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000); // 4-second strict network timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10-second generous timeout for full rich answers
 
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
 
@@ -228,7 +228,7 @@ export async function askGeminiGuide(
         generationConfig: {
           temperature: 0.7,
           topP: 0.9,
-          maxOutputTokens: 800,
+          maxOutputTokens: 2048,
         },
       };
 
@@ -320,9 +320,9 @@ export async function generateGeminiAudio(
 
   if (!cleanSpeechText) return null;
 
-  // Speak first 200 characters for instant sub-second audio response
-  const spokenSnippet = cleanSpeechText.length > 200
-    ? cleanSpeechText.slice(0, 200) + '...'
+  // Speak full natural text up to 1200 characters without premature cutoff
+  const spokenSnippet = cleanSpeechText.length > 1200
+    ? cleanSpeechText.slice(0, 1200) + '...'
     : cleanSpeechText;
 
   const totalKeys = keyManager.getKeyCount();
@@ -331,7 +331,7 @@ export async function generateGeminiAudio(
     const { key } = keyManager.getActiveKey();
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2200); // 2.2-second max timeout for ultra-fast audio fallback
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second audio generation window
 
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
 
