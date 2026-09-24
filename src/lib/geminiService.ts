@@ -252,7 +252,7 @@ export async function askGeminiGuide(
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10-second generous timeout for full rich answers
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${key}`;
 
       const requestBody = {
         systemInstruction: {
@@ -395,7 +395,7 @@ export async function generateGeminiAudio(
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second audio generation window
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${key}`;
 
         const requestBody = {
           contents: [{ parts: [{ text: promptText }] }],
