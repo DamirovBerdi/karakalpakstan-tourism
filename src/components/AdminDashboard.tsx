@@ -476,16 +476,86 @@ function DashboardPanel({ onLogout, adminInfo }: { onLogout: () => void; adminIn
   const [selectedReceipt, setSelectedReceipt] = useState<PlatformReceipt | null>(null);
   const [receiptFilter, setReceiptFilter] = useState<string>('all');
 
-  const [supportMessages, setSupportMessages] = useState<AdminSupportMessage[]>([
-    { id: 'sup-1', sender_id: 'usr_john', sender_name: 'John Miller (USA)', recipient_id: 'admin_support', content: 'Hello! I need a custom 3-day tour to Moynaq and Ustyurt Canyon for 4 people with an English guide.', created_at: new Date(Date.now() - 3600000 * 2).toISOString() },
-    { id: 'sup-2', sender_id: 'usr_john', sender_name: 'John Miller (USA)', recipient_id: 'admin_support', content: 'Can we include a night in a traditional Yurt at Sudochye Lake?', created_at: new Date(Date.now() - 3600000 * 1.5).toISOString() },
-    { id: 'sup-3', sender_id: 'usr_elena', sender_name: 'Elena Rostova (KAZ)', recipient_id: 'admin_support', content: 'Здравствуйте! Как забронировать юртовый лагерь на озере Судочье на 20 сентября?', created_at: new Date(Date.now() - 3600000 * 5).toISOString() },
-  ]);
-  const [activeSupportSender, setActiveSupportSender] = useState<string | null>('usr_john');
+  const [supportMessages, setSupportMessages] = useState<AdminSupportMessage[]>([]);
+  const [activeSupportSender, setActiveSupportSender] = useState<string | null>(null);
   const [adminReplyText, setAdminReplyText] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+
+  const loadSupportChats = useCallback(async () => {
+    try {
+      const { data: configData } = await supabase
+        .from('admin_config')
+        .select('key, value, updated_at')
+        .or('key.like.support_chats_%,key.eq.support_chats_global');
+
+      let legacyMsgs: AdminSupportMessage[] = [];
+      try {
+        const { data: legacyData } = await supabase
+          .from('admin_support_messages')
+          .select('*')
+          .order('created_at', { ascending: true });
+        if (legacyData && legacyData.length > 0) {
+          legacyMsgs = legacyData as AdminSupportMessage[];
+        }
+      } catch {
+        // table might not exist
+      }
+
+      const allMsgsMap = new Map<string, AdminSupportMessage>();
+
+      legacyMsgs.forEach((m) => {
+        allMsgsMap.set(m.id, m);
+      });
+
+      if (configData && configData.length > 0) {
+        configData.forEach((row) => {
+          if (row.value) {
+            try {
+              const parsed = JSON.parse(row.value);
+              if (Array.isArray(parsed)) {
+                const threadUserId = row.key.replace('support_chats_', '');
+                parsed.forEach((m: any) => {
+                  if (m && m.id && m.content) {
+                    const senderId = m.sender_id || (m.recipient_id === 'admin_support' ? threadUserId : 'admin_support');
+                    const recipientId = m.recipient_id || (m.sender_id === 'admin_support' ? threadUserId : 'admin_support');
+                    allMsgsMap.set(m.id, {
+                      id: m.id,
+                      sender_id: senderId,
+                      sender_name: m.sender_name || (senderId === 'admin_support' ? '👑 Super Admin' : 'Турист'),
+                      recipient_id: recipientId,
+                      content: m.content,
+                      created_at: m.created_at || new Date().toISOString(),
+                    });
+                  }
+                });
+              }
+            } catch {
+              // ignore parse error
+            }
+          }
+        });
+      }
+
+      const combinedMsgs = Array.from(allMsgsMap.values()).sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+
+      if (combinedMsgs.length > 0) {
+        setSupportMessages(combinedMsgs);
+        setActiveSupportSender((prev) => {
+          if (prev && combinedMsgs.some((m) => m.sender_id === prev || m.recipient_id === prev)) {
+            return prev;
+          }
+          const firstUserMsg = combinedMsgs.find((m) => m.sender_id !== 'admin_support');
+          return firstUserMsg ? firstUserMsg.sender_id : combinedMsgs[0].sender_id;
+        });
+      }
+    } catch {
+      // ignore load errors
+    }
+  }, []);
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -640,12 +710,46 @@ function DashboardPanel({ onLogout, adminInfo }: { onLogout: () => void; adminIn
       totalGameWinners: winnersRes.data?.length ?? 0,
     });
 
+    await loadSupportChats();
     setLoading(false);
-  }, []);
+  }, [loadSupportChats]);
 
   useEffect(() => {
     loadAll();
   }, [loadAll]);
+
+  useEffect(() => {
+    loadSupportChats();
+
+    const channel = supabase
+      .channel('kk_community_realtime')
+      .on('broadcast', { event: 'new_admin_msg' }, ({ payload }) => {
+        if (payload && payload.id) {
+          setSupportMessages((prev) => {
+            if (prev.some((m) => m.id === payload.id)) return prev;
+            const newMsg: AdminSupportMessage = {
+              id: payload.id,
+              sender_id: payload.sender_id || 'tourist',
+              sender_name: payload.sender_name || 'Турист',
+              recipient_id: payload.recipient_id || 'admin_support',
+              content: payload.content || '',
+              created_at: payload.created_at || new Date().toISOString(),
+            };
+            return [...prev, newMsg];
+          });
+        }
+      })
+      .subscribe();
+
+    const timer = setInterval(() => {
+      loadSupportChats();
+    }, 4000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(timer);
+    };
+  }, [loadSupportChats]);
 
   // Actions
   const handleSaveGuide = async (e: React.FormEvent) => {
@@ -1254,14 +1358,16 @@ function DashboardPanel({ onLogout, adminInfo }: { onLogout: () => void; adminIn
                   <MessageSquare className="h-5 w-5 text-deepblue-600" /> Диалоги с туристами
                 </h3>
                 <span className="rounded-full bg-deepblue-100 px-2.5 py-0.5 text-xs font-bold text-deepblue-800">
-                  {Array.from(new Set(supportMessages.map(m => m.sender_id))).length} активных
+                  {Array.from(new Set(supportMessages.map(m => m.sender_id === 'admin_support' ? m.recipient_id : m.sender_id).filter(Boolean))).length} активных
                 </span>
               </div>
 
               <div className="space-y-2 overflow-y-auto flex-1 pr-1">
-                {Array.from(new Set(supportMessages.map(m => m.sender_id))).map((senderId) => {
-                  const lastMsg = supportMessages.filter(m => m.sender_id === senderId).slice(-1)[0];
-                  const senderName = lastMsg?.sender_name || senderId;
+                {Array.from(new Set(supportMessages.map(m => m.sender_id === 'admin_support' ? m.recipient_id : m.sender_id).filter(Boolean))).map((senderId) => {
+                  const threadMsgs = supportMessages.filter(m => m.sender_id === senderId || m.recipient_id === senderId);
+                  const lastMsg = threadMsgs[threadMsgs.length - 1];
+                  const touristMsg = threadMsgs.find(m => m.sender_id !== 'admin_support');
+                  const senderName = touristMsg?.sender_name || lastMsg?.sender_name || senderId;
                   const isSelected = activeSupportSender === senderId;
 
                   return (
@@ -1288,6 +1394,12 @@ function DashboardPanel({ onLogout, adminInfo }: { onLogout: () => void; adminIn
                     </button>
                   );
                 })}
+
+                {supportMessages.length === 0 && (
+                  <div className="p-6 text-center text-xs text-deepblue-400">
+                    Сообщений от туристов пока нет.
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1300,7 +1412,7 @@ function DashboardPanel({ onLogout, adminInfo }: { onLogout: () => void; adminIn
                     <div>
                       <h4 className="font-display text-base font-bold text-deepblue-900 flex items-center gap-2">
                         <User className="h-4 w-4 text-terracotta-500" />
-                        {supportMessages.find(m => m.sender_id === activeSupportSender)?.sender_name || activeSupportSender}
+                        {supportMessages.find(m => m.sender_id === activeSupportSender && m.sender_id !== 'admin_support')?.sender_name || activeSupportSender}
                       </h4>
                       <p className="text-xs text-deepblue-400">Прямое обращение в поддержку / запрос индивидуального тура</p>
                     </div>
@@ -1359,24 +1471,70 @@ function DashboardPanel({ onLogout, adminInfo }: { onLogout: () => void; adminIn
 
                   {/* Send Reply Input */}
                   <form
-                    onSubmit={(e) => {
+                    onSubmit={async (e) => {
                       e.preventDefault();
                       if (!adminReplyText.trim() || !activeSupportSender) return;
 
+                      const senderDisplayName = adminInfo?.displayName || adminInfo?.username || 'Super Admin';
                       const newMsg: AdminSupportMessage = {
-                        id: `sup-${Date.now()}`,
+                        id: `adm-${Date.now()}`,
                         sender_id: 'admin_support',
-                        sender_name: `👑 ${adminInfo?.username || 'Super Admin'}`,
+                        sender_name: `👑 ${senderDisplayName}`,
                         recipient_id: activeSupportSender,
                         content: adminReplyText.trim(),
                         created_at: new Date().toISOString(),
                       };
 
-                      setSupportMessages((prev) => [...prev, newMsg]);
+                      const updatedMessages = [...supportMessages, newMsg];
+                      setSupportMessages(updatedMessages);
                       setAdminReplyText('');
 
-                      // Send to Supabase DB in background
-                      supabase.from('admin_support_messages').insert([newMsg]).then(() => {});
+                      const threadKey = activeSupportSender === 'global' ? 'support_chats_global' : `support_chats_${activeSupportSender}`;
+
+                      const threadMessages = updatedMessages
+                        .filter((m) => m.sender_id === activeSupportSender || m.recipient_id === activeSupportSender)
+                        .map((m) => ({
+                          id: m.id,
+                          sender_id: m.sender_id,
+                          recipient_id: m.recipient_id,
+                          content: m.content,
+                          read: true,
+                          sender_name: m.sender_name,
+                          created_at: m.created_at,
+                        }));
+
+                      try {
+                        await supabase.from('admin_config').upsert(
+                          {
+                            key: threadKey,
+                            value: JSON.stringify(threadMessages),
+                            updated_at: new Date().toISOString(),
+                          },
+                          { onConflict: 'key' }
+                        );
+                      } catch {
+                        // ignore
+                      }
+
+                      try {
+                        supabase.channel('kk_community_realtime').send({
+                          type: 'broadcast',
+                          event: 'new_admin_msg',
+                          payload: {
+                            id: newMsg.id,
+                            sender_id: newMsg.sender_id,
+                            recipient_id: newMsg.recipient_id,
+                            content: newMsg.content,
+                            read: false,
+                            sender_name: newMsg.sender_name,
+                            created_at: newMsg.created_at,
+                          },
+                        });
+                      } catch {}
+
+                      try {
+                        await supabase.from('admin_support_messages').insert([newMsg]);
+                      } catch {}
                     }}
                     className="flex items-center gap-2 pt-2 border-t border-sand-200"
                   >
