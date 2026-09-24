@@ -171,9 +171,13 @@ export default function Community() {
         .order('created_at', { ascending: false })
         .limit(20);
       if (data) {
-        setProfiles(data as CommunityProfile[]);
+        const safeProfiles = data.map((p: any) => ({
+          ...p,
+          travel_interests: Array.isArray(p.travel_interests) ? p.travel_interests : []
+        }));
+        setProfiles(safeProfiles as CommunityProfile[]);
         try {
-          localStorage.setItem('kk_community_profiles', JSON.stringify(data));
+          localStorage.setItem('kk_community_profiles', JSON.stringify(safeProfiles));
         } catch {}
       }
     } catch {
@@ -650,7 +654,7 @@ export default function Community() {
                   </button>
                 </div>
                 {profile.bio && <p className="mt-3 text-sm text-white/80">{profile.bio}</p>}
-                {profile.travel_interests.length > 0 && (
+                {Array.isArray(profile.travel_interests) && profile.travel_interests.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {profile.travel_interests.map((tag) => (
                       <span key={tag} className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs">{tag}</span>
@@ -706,7 +710,7 @@ export default function Community() {
                       </div>
                     </div>
                     {p.bio && <p className="text-xs text-deepblue-600 leading-relaxed mb-3 line-clamp-2">{p.bio}</p>}
-                    {p.travel_interests.length > 0 && (
+                    {Array.isArray(p.travel_interests) && p.travel_interests.length > 0 && (
                       <div className="mb-3 flex flex-wrap gap-1">
                         {p.travel_interests.slice(0, 3).map((tag) => (
                           <span key={tag} className="rounded-full bg-sand-100 px-2 py-0.5 text-xs text-deepblue-600">{tag}</span>
