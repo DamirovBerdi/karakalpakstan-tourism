@@ -19,10 +19,10 @@ function deobfuscateToken(encoded: string): string {
 
 // Obfuscated Token Hashes (Never exposed in plain text)
 const OBFUSCATED_GEMINI_POOL: string[] = [
-  'GwpyHDxnMhRtFycVO1ExHTstZmoxHGwlLzk2B2o/bBE/DQkYIgNoCgcSGWkmFisHTSotPjo=',
-  'GwpyHDxnMhRtFzk6LxMZMyY/Fm0UFClqBHMeCRURFQgoLDguGT4sNx0XMQlpFW0eMjAubQw=',
-  'GwpyHDxnMhRtEAU6NSEoIjsKPBA1LzI6bRFoEQwDBhYJDzUJGGoqORQ1ED4bHzgRETVpMQw=',
-  'GwpyHDxnMhRtFhYXKyIyLRcyDh4IKAoyFRglUjUCMQVpNgYOAiYsHG1NLS9kFg4YEx8CbQw=',
+  'GwpyHDxnMhRtFRhtLQ4CGSseazQZND4DMxgwDy9vCxkUEytrYzRtCWYFLSMmMzwcVQsTJTo=',
+  'GwpyHDxnMhRtFSUTMSQ4NWwrCBAkMAlxPwowB2piHgdqOQ0SDm4cDxkNCBosOnMlU2MuMyo=',
+  'GwpyHDxnMhRtFmgaJwcrYjgMCQ8LYmoRFiQKJS1oKjZsL1gNEAYtNSwWOzRkBT87GXcpJAw=',
+  'GwpyHDxnMhRtFgwBNysjHDgWBDsOOy4FCisFNAwRbho0HAc8OG0VEhw5Ey0yPyk7CS5qJQw=',
 ];
 
 function getDecodedTokens(): string[] {
@@ -120,7 +120,8 @@ class GeminiKeyManager {
     for (let i = 0; i < this.keys.length; i++) {
       const candidateIndex = (this.currentIndex + i) % this.keys.length;
       if (this.isKeyUsable(candidateIndex)) {
-        this.currentIndex = candidateIndex;
+        // Advance current index for round-robin load balancing so quota is shared evenly across all keys
+        this.currentIndex = (candidateIndex + 1) % this.keys.length;
         localStorage.setItem(STORAGE_ACTIVE_KEY_INDEX, String(this.currentIndex));
         return { key: this.keys[candidateIndex], index: candidateIndex };
       }
