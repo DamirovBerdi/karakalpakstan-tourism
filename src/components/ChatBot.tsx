@@ -242,9 +242,9 @@ export default function ChatBot() {
       setAudioErrorId(null);
       setAudioLoadingId(msgId);
 
-      // 1. First priority: High-fidelity Gemini Neural Voice
+      // 1. First priority: High-fidelity Gemini Neural Voice (Fenrir: Cozy, magnetic, resonant voice)
       try {
-        const geminiAudioUrl = await generateGeminiAudio(text);
+        const geminiAudioUrl = await generateGeminiAudio(text, 'Fenrir');
         if (geminiAudioUrl) {
           const audio = new Audio(geminiAudioUrl);
           audioElementRef.current = audio;
@@ -290,12 +290,13 @@ export default function ChatBot() {
         const utterance = new SpeechSynthesisUtterance(cleanText);
         const bcp47 = BCP47_MAP[chatLang] ?? 'en-US';
         utterance.lang = bcp47;
-        utterance.rate = 0.95;
-        utterance.pitch = 1;
+        utterance.rate = 0.92;
+        utterance.pitch = 0.92;
 
         const voices = window.speechSynthesis.getVoices();
         const langPrefix = bcp47.split('-')[0].toLowerCase();
         const matchedVoice =
+          voices.find((v) => v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('david') || v.name.toLowerCase().includes('google')) ??
           voices.find((v) => v.lang.toLowerCase() === bcp47.toLowerCase()) ??
           voices.find((v) => v.lang.toLowerCase().startsWith(langPrefix));
         if (matchedVoice) utterance.voice = matchedVoice;

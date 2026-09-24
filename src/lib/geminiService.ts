@@ -302,7 +302,7 @@ export function pcm16ToWavBlob(pcm16Base64: string, sampleRate = 24000): Blob {
 // Generate high-fidelity Gemini Voice Audio
 export async function generateGeminiAudio(
   text: string,
-  voiceName: 'Puck' | 'Charon' | 'Kore' | 'Fenrir' | 'Aoede' = 'Puck'
+  voiceName: 'Fenrir' | 'Puck' | 'Charon' | 'Kore' | 'Aoede' = 'Fenrir'
 ): Promise<string | null> {
   // Strip markdown formatting tokens for crystal clear natural speech
   const cleanSpeechText = text
