@@ -210,10 +210,16 @@ export default function Community() {
       if (data?.value) {
         const parsed = JSON.parse(data.value);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setAdminMessages(parsed);
-          try {
-            localStorage.setItem('kk_admin_support_messages', JSON.stringify(parsed));
-          } catch {}
+          setAdminMessages((prev) => {
+            const map = new Map<string, Message>();
+            prev.forEach((m) => map.set(m.id, m));
+            parsed.forEach((m: Message) => map.set(m.id, m));
+            const updated = Array.from(map.values());
+            try {
+              localStorage.setItem('kk_admin_support_messages', JSON.stringify(updated));
+            } catch {}
+            return updated;
+          });
         }
       }
     } catch {
@@ -233,8 +239,10 @@ export default function Community() {
         const parsed = JSON.parse(data.value);
         if (Array.isArray(parsed) && parsed.length > 0) {
           setGroupMessages((prev) => {
-            const other = prev.filter((m) => m.channel !== activeChannel);
-            const updated = [...other, ...parsed];
+            const map = new Map<string, GroupMessage>();
+            prev.forEach((m) => map.set(m.id, m));
+            parsed.forEach((m: GroupMessage) => map.set(m.id, m));
+            const updated = Array.from(map.values());
             try {
               localStorage.setItem('kk_all_group_messages', JSON.stringify(updated));
             } catch {}
@@ -293,13 +301,17 @@ export default function Community() {
       });
     } catch {}
 
-    // Persist to admin_config safely
+    // Persist to admin_config safely with onConflict key
     try {
-      await supabase.from('admin_config').upsert({
-        key: `group_msg_${activeChannel}`,
-        value: JSON.stringify(updated.filter((m) => m.channel === activeChannel)),
-        updated_at: new Date().toISOString(),
-      });
+      const channelMsgs = updated.filter((m) => m.channel === activeChannel);
+      await supabase.from('admin_config').upsert(
+        {
+          key: `group_msg_${activeChannel}`,
+          value: JSON.stringify(channelMsgs),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'key' }
+      );
     } catch {}
   };
 
@@ -368,13 +380,17 @@ export default function Community() {
       });
     } catch {}
 
-    // Save support message to admin_config safely
+    // Save support message to admin_config safely with onConflict key
     try {
-      await supabase.from('admin_config').upsert({
-        key: `support_chats_${user.id}`,
-        value: JSON.stringify(updated),
-        updated_at: new Date().toISOString(),
-      });
+      const key = user ? `support_chats_${user.id}` : 'support_chats_global';
+      await supabase.from('admin_config').upsert(
+        {
+          key,
+          value: JSON.stringify(updated),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'key' }
+      );
     } catch {}
 
     setMsgLoading(false);
