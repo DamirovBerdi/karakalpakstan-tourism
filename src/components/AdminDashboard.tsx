@@ -271,7 +271,7 @@ export default function AdminDashboard() {
         'superadmin'
       ];
 
-      const validPasswords = ['Admin2026!', 'admin', 'admin123', 'SuperAdmin2026!'];
+      const validPasswords = ['Damiyr_2010_2016_', '@azada_10', 'Admin2026!', 'admin', 'admin123', 'SuperAdmin2026!'];
 
       if (allowedAdmins.includes(uInput) && validPasswords.includes(pInput)) {
         setAdminInfo({
