@@ -1,3 +1,5 @@
+declare const Deno: any;
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -7,9 +9,9 @@ const corsHeaders = {
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
-const visitorRateLimitMap = new Map();
+const visitorRateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
-function isTrackRateLimited(ip) {
+function isTrackRateLimited(ip: string): boolean {
   const now = Date.now();
   const entry = visitorRateLimitMap.get(ip);
   if (!entry || now > entry.resetTime) {
@@ -23,7 +25,7 @@ function isTrackRateLimited(ip) {
   return false;
 }
 
-function getClientIP(req) {
+function getClientIP(req: Request): string {
   const headers = req.headers;
   const cfConnecting = headers.get('cf-connecting-ip');
   if (cfConnecting) return cfConnecting.trim();
@@ -31,7 +33,7 @@ function getClientIP(req) {
   if (realIp) return realIp.trim();
   const forwarded = headers.get('x-forwarded-for');
   if (forwarded) {
-    const ips = forwarded.split(',').map((ip) => ip.trim()).filter(Boolean);
+    const ips = forwarded.split(',').map((ip: string) => ip.trim()).filter(Boolean);
     if (ips.length > 0) return ips[ips.length - 1];
   }
   const trueClient = headers.get('true-client-ip');
@@ -39,7 +41,7 @@ function getClientIP(req) {
   return '0.0.0.0';
 }
 
-function extractCountry(req) {
+function extractCountry(req: Request): string {
   const cfCountry = req.headers.get('cf-ipcountry');
   if (cfCountry) return cfCountry;
   const xCountry = req.headers.get('x-vercel-ip-country');
@@ -47,7 +49,7 @@ function extractCountry(req) {
   return '';
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { status: 200, headers: corsHeaders });
   }
@@ -110,8 +112,8 @@ Deno.serve(async (req) => {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err?.message ?? 'Internal error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
