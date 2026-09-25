@@ -301,7 +301,7 @@ export default function ChatBot() {
       let cachedUrl = audioCacheRef.current.get(msgId);
       if (!cachedUrl) {
         try {
-          cachedUrl = (await generateGeminiAudio(text, 'Puck', chatLang)) || undefined;
+          cachedUrl = (await generateGeminiAudio(text, 'Charon', chatLang)) || undefined;
           if (cachedUrl) {
             audioCacheRef.current.set(msgId, cachedUrl);
           }
@@ -516,11 +516,10 @@ export default function ChatBot() {
                         <button
                           key={l.code}
                           onClick={() => handleLangChange(l.code)}
-                          className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors ${
-                            chatLang === l.code
+                          className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors ${chatLang === l.code
                               ? 'bg-deepblue-50 text-deepblue-700 font-semibold'
                               : 'text-deepblue-600 hover:bg-sand-50'
-                          }`}
+                            }`}
                         >
                           <span className="text-base leading-none flex-shrink-0">{l.flag}</span>
                           <span className="flex-1 text-left truncate">{l.label}</span>
@@ -568,11 +567,10 @@ export default function ChatBot() {
                   )}
                   <div className="max-w-[85%] sm:max-w-[80%]">
                     <div
-                      className={`rounded-2xl px-4 py-3 text-sm leading-relaxed break-words shadow-xs ${
-                        msg.role === 'user'
+                      className={`rounded-2xl px-4 py-3 text-sm leading-relaxed break-words shadow-xs ${msg.role === 'user'
                           ? 'bg-gradient-to-r from-terracotta-500 to-terracotta-600 text-white rounded-br-sm'
                           : 'bg-white text-deepblue-900 ring-1 ring-sand-200 rounded-bl-sm border border-sand-100'
-                      }`}
+                        }`}
                     >
                       <FormattedMessage content={msg.content} isUser={msg.role === 'user'} />
                     </div>
@@ -584,11 +582,10 @@ export default function ChatBot() {
                         <button
                           onClick={() => playAudio(msg.id, msg.content)}
                           disabled={audioLoadingId === msg.id}
-                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all shadow-2xs ${
-                            audioPlayingId === msg.id
+                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all shadow-2xs ${audioPlayingId === msg.id
                               ? 'bg-terracotta-50 text-terracotta-600 ring-1 ring-terracotta-200'
                               : 'bg-white text-deepblue-700 hover:bg-sand-100 ring-1 ring-sand-200/80 active:scale-95'
-                          }`}
+                            }`}
                           aria-label={ui.listen}
                         >
                           {audioLoadingId === msg.id ? (
@@ -706,9 +703,8 @@ export default function ChatBot() {
                   type="button"
                   onClick={toggleRecording}
                   disabled={loading}
-                  className={`flex-shrink-0 rounded-xl p-2.5 text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-                    isRecording ? 'bg-red-500 animate-pulse' : 'bg-deepblue-600 hover:bg-deepblue-700'
-                  }`}
+                  className={`flex-shrink-0 rounded-xl p-2.5 text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-deepblue-600 hover:bg-deepblue-700'
+                    }`}
                   aria-label={isRecording ? ui.stopRecording : ui.voiceInput}
                 >
                   {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
