@@ -73,6 +73,11 @@ class GeminiKeyManager {
     const saved = localStorage.getItem(STORAGE_ACTIVE_KEY_INDEX);
     const parsed = saved ? parseInt(saved, 10) : 0;
     this.currentIndex = !isNaN(parsed) && parsed >= 0 && parsed < this.keys.length ? parsed : 0;
+    try {
+      localStorage.removeItem(STORAGE_EXHAUSTED_KEYS);
+    } catch {
+      // ignore
+    }
   }
 
   public reloadKeys() {
