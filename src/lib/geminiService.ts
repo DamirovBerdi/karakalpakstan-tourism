@@ -126,7 +126,15 @@ class GeminiKeyManager {
         return { key: this.keys[candidateIndex], index: candidateIndex };
       }
     }
-    return { key: this.keys[this.currentIndex], index: this.currentIndex };
+    // If all keys were marked exhausted, clear cooldown map so requests always go through
+    try {
+      localStorage.removeItem(STORAGE_EXHAUSTED_KEYS);
+    } catch {
+      // ignore
+    }
+    const fallbackIdx = this.currentIndex % (this.keys.length || 1);
+    this.currentIndex = (fallbackIdx + 1) % (this.keys.length || 1);
+    return { key: this.keys[fallbackIdx] || '', index: fallbackIdx };
   }
 
   public markCurrentKeyExhausted(): { nextKey: string; nextIndex: number } | null {
@@ -225,7 +233,15 @@ export const SYSTEM_PROMPT = `
    - Ответ должен выглядеть опрятно, профессионально и приятно для чтения на любом экране.
 `.trim();
 
-// Calling Gemini 3.6 Flash with auto-rotation on error/429
+// Reliable high-speed Gemini chat models with automatic model fallback
+const CHAT_MODELS = [
+  'gemini-3-flash-preview',
+  'gemini-3.1-flash-lite',
+  'gemini-3.6-flash',
+  'gemini-3.8-flash',
+];
+
+// Calling Gemini with multi-model fallback and auto-rotation across all keys
 export async function askGeminiGuide(
   userPrompt: string,
   history: { role: 'user' | 'assistant'; content: string }[],
@@ -245,63 +261,69 @@ export async function askGeminiGuide(
     },
   ];
 
+  const requestBody = {
+    systemInstruction: {
+      parts: [{ text: SYSTEM_PROMPT }],
+    },
+    contents,
+    generationConfig: {
+      temperature: 0.7,
+      topP: 0.9,
+      maxOutputTokens: 2048,
+    },
+  };
+
   for (let attempt = 0; attempt < totalKeys; attempt++) {
     const { key } = keyManager.getActiveKey();
 
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10-second generous timeout for full rich answers
+    for (const model of CHAT_MODELS) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent';
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
 
-      const requestBody = {
-        systemInstruction: {
-          parts: [{ text: SYSTEM_PROMPT }],
-        },
-        contents,
-        generationConfig: {
-          temperature: 0.7,
-          topP: 0.9,
-          maxOutputTokens: 2048,
-        },
-      };
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': key,
+          },
+          body: JSON.stringify(requestBody),
+          signal: controller.signal,
+        });
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': key,
-        },
-        body: JSON.stringify(requestBody),
-        signal: controller.signal,
-      });
+        clearTimeout(timeoutId);
 
-      clearTimeout(timeoutId);
+        // 429 / 403 means key quota issue: rotate key immediately
+        if (response.status === 429 || response.status === 403) {
+          keyManager.markCurrentKeyExhausted();
+          break; // Try next key
+        }
 
-      if (response.status === 429 || response.status === 403 || response.status === 400) {
-        keyManager.markCurrentKeyExhausted();
+        // 503 / 500 means this specific model is temporarily busy: try next model in pool without exhausting key
+        if (response.status === 503 || response.status === 500) {
+          continue;
+        }
+
+        if (!response.ok) {
+          continue;
+        }
+
+        const data = await response.json();
+        const answerText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (answerText && typeof answerText === 'string' && answerText.trim()) {
+          return { text: answerText.trim(), source: 'gemini' };
+        }
+      } catch {
+        // Network or timeout: try next model
         continue;
       }
-
-      if (!response.ok) {
-        keyManager.markCurrentKeyExhausted();
-        continue;
-      }
-
-      const data = await response.json();
-      const answerText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (answerText && typeof answerText === 'string' && answerText.trim()) {
-        return { text: answerText.trim(), source: 'gemini' };
-      }
-
-      keyManager.markCurrentKeyExhausted();
-    } catch {
-      keyManager.markCurrentKeyExhausted();
     }
   }
 
-  // Fallback to local curated knowledge base
+  // Fallback to local curated knowledge base ONLY if all models and all keys are unavailable
   const validLang: Lang = (siteLang === 'ru' || siteLang === 'uz' || siteLang === 'kaa') ? siteLang : 'en';
   const fallbackReply = findResponse(userPrompt, validLang);
 
@@ -390,8 +412,7 @@ export async function generateGeminiAudio(
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-          // Key passed in header: never exposed in the URL in DevTools Network tab!
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
 
           const requestBody = {
             contents: [{ parts: [{ text: spokenSnippet }] }],
