@@ -398,76 +398,80 @@ export async function generateGeminiAudio(
 
   if (!cleanSpeechText) return null;
 
-  // Speak full natural text up to 1200 characters without premature cutoff
-  const spokenSnippet = cleanSpeechText.length > 1200
-    ? cleanSpeechText.slice(0, 1200) + '...'
-    : cleanSpeechText;
+  // Intelligently select a natural spoken snippet at sentence boundaries (~350-450 chars)
+  // Generating 1200+ characters of neural voice takes 20+ seconds, causing timeouts and browser freezes.
+  // 350-450 chars provides 30-40 seconds of high-fidelity intro voice and generates in under 8-10 seconds!
+  let spokenSnippet = cleanSpeechText;
+  if (cleanSpeechText.length > 420) {
+    const periodIdx = cleanSpeechText.slice(260, 440).lastIndexOf('.');
+    const exclamIdx = cleanSpeechText.slice(260, 440).lastIndexOf('!');
+    const questIdx = cleanSpeechText.slice(260, 440).lastIndexOf('?');
+    const bestIdx = Math.max(periodIdx, exclamIdx, questIdx);
+    if (bestIdx > 0) {
+      spokenSnippet = cleanSpeechText.slice(0, 260 + bestIdx + 1);
+    } else {
+      spokenSnippet = cleanSpeechText.slice(0, 400) + '...';
+    }
+  }
 
-  // Active TTS models with guaranteed quota and no 429 deprecation errors
-  const models = ['gemini-3.8-flash-lite-tts', 'gemini-3.8-flash-tts'];
-  const totalKeys = keyManager.getKeyCount();
+  // Maximum 2 key attempts, 15s timeout each: never hangs for minutes
+  const totalKeys = Math.min(2, keyManager.getKeyCount());
+  const model = 'gemini-3.8-flash-lite-tts';
 
   for (let attempt = 0; attempt < totalKeys; attempt++) {
     const { key } = keyManager.getActiveKey();
 
-    for (const model of models) {
-      // Automatic retry loop for weak Wi-Fi connection fluctuations
-      for (let retry = 0; retry < 2; retry++) {
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 12000);
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15-second generation window
 
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
 
-          const requestBody = {
-            contents: [{ parts: [{ text: spokenSnippet }] }],
-            generationConfig: {
-              responseModalities: ['AUDIO'],
-              speechConfig: {
-                voiceConfig: {
-                  prebuiltVoiceConfig: {
-                    voiceName,
-                  },
-                },
+      const requestBody = {
+        contents: [{ parts: [{ text: spokenSnippet }] }],
+        generationConfig: {
+          responseModalities: ['AUDIO'],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: {
+                voiceName,
               },
             },
-          };
+          },
+        },
+      };
 
-          const res = await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-goog-api-key': key,
-            },
-            body: JSON.stringify(requestBody),
-            signal: controller.signal,
-          });
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': key,
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      });
 
-          clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
 
-          if (res.status === 429 || res.status === 403) {
-            // Try next model before marking key exhausted
-            break;
-          }
-
-          if (!res.ok) {
-            break;
-          }
-
-          const data = await res.json();
-          const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
-
-          if (inlineData?.data && typeof inlineData.data === 'string') {
-            const audioBlob = base64ToAudioBlob(inlineData.data, inlineData.mimeType, 24000);
-            return URL.createObjectURL(audioBlob);
-          }
-
-          break;
-        } catch {
-          // Temporary Wi-Fi glitch, wait 350ms before retry
-          await new Promise((r) => setTimeout(r, 350));
-        }
+      if (res.status === 429 || res.status === 403) {
+        keyManager.markCurrentKeyExhausted();
+        continue;
       }
+
+      if (!res.ok) {
+        continue;
+      }
+
+      const data = await res.json();
+      const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+
+      if (inlineData?.data && typeof inlineData.data === 'string') {
+        const audioBlob = base64ToAudioBlob(inlineData.data, inlineData.mimeType, 24000);
+        return URL.createObjectURL(audioBlob);
+      }
+    } catch {
+      // If timed out or network error, immediately proceed or fallback without looping
+      continue;
     }
   }
 
