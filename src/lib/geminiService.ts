@@ -398,8 +398,8 @@ export async function generateGeminiAudio(
     ? cleanSpeechText.slice(0, 1200) + '...'
     : cleanSpeechText;
 
-  // Priority list: first original voice model (gemini-2.5-flash-preview-tts), then modern fallback
-  const models = ['gemini-2.5-flash-preview-tts', 'gemini-3.8-flash-lite-tts'];
+  // Active TTS models with guaranteed quota and no 429 deprecation errors
+  const models = ['gemini-3.8-flash-lite-tts', 'gemini-3.8-flash-tts'];
   const totalKeys = keyManager.getKeyCount();
 
   for (let attempt = 0; attempt < totalKeys; attempt++) {
@@ -441,7 +441,7 @@ export async function generateGeminiAudio(
           clearTimeout(timeoutId);
 
           if (res.status === 429 || res.status === 403) {
-            keyManager.markCurrentKeyExhausted();
+            // Try next model before marking key exhausted
             break;
           }
 
