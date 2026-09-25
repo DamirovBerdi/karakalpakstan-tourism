@@ -301,7 +301,7 @@ export default function ChatBot() {
       let cachedUrl = audioCacheRef.current.get(msgId);
       if (!cachedUrl) {
         try {
-          cachedUrl = (await generateGeminiAudio(text, 'Kore', chatLang)) || undefined;
+          cachedUrl = (await generateGeminiAudio(text, 'Puck', chatLang)) || undefined;
           if (cachedUrl) {
             audioCacheRef.current.set(msgId, cachedUrl);
           }

@@ -252,7 +252,7 @@ export async function askGeminiGuide(
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10-second generous timeout for full rich answers
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${key}`;
+      const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent';
 
       const requestBody = {
         systemInstruction: {
@@ -270,6 +270,7 @@ export async function askGeminiGuide(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-goog-api-key': key,
         },
         body: JSON.stringify(requestBody),
         signal: controller.signal,
@@ -307,15 +308,26 @@ export async function askGeminiGuide(
   return { text: fallbackReply, source: 'local_kb' };
 }
 
-// Convert 16-bit Linear PCM (24kHz Mono) Base64 into standard WAV Blob
-export function pcm16ToWavBlob(pcm16Base64: string, sampleRate = 24000): Blob {
-  const binaryString = atob(pcm16Base64);
+// Intelligently convert base64 audio (RIFF WAV or raw 16-bit linear PCM) into clean Blob
+export function base64ToAudioBlob(base64Data: string, mimeType?: string, sampleRate = 24000): Blob {
+  const binaryString = atob(base64Data);
   const len = binaryString.length;
   const bytes = new Uint8Array(len);
   for (let i = 0; i < len; i++) {
     bytes[i] = binaryString.charCodeAt(i);
   }
 
+  // If the model returned an already encoded RIFF WAVE file, do not add an extra header!
+  const isAlreadyWav = (mimeType && mimeType.includes('wav')) ||
+    (bytes.length >= 12 &&
+     bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 && // 'RIFF'
+     bytes[8] === 0x57 && bytes[9] === 0x41 && bytes[10] === 0x56 && bytes[11] === 0x45); // 'WAVE'
+
+  if (isAlreadyWav) {
+    return new Blob([bytes], { type: 'audio/wav' });
+  }
+
+  // Otherwise, wrap raw 16-bit linear PCM with standard 44-byte WAV header
   const wavHeader = new ArrayBuffer(44);
   const view = new DataView(wavHeader);
   // "RIFF"
@@ -339,10 +351,14 @@ export function pcm16ToWavBlob(pcm16Base64: string, sampleRate = 24000): Blob {
   return new Blob([wavHeader, bytes], { type: 'audio/wav' });
 }
 
+// Backward-compatible alias
+export const pcm16ToWavBlob = (pcm16Base64: string, sampleRate = 24000) =>
+  base64ToAudioBlob(pcm16Base64, undefined, sampleRate);
+
 // Generate high-fidelity Gemini Voice Audio
 export async function generateGeminiAudio(
   text: string,
-  voiceName: 'Puck' | 'Fenrir' | 'Charon' | 'Kore' | 'Aoede' | 'Leda' = 'Kore',
+  voiceName: 'Puck' | 'Fenrir' | 'Charon' | 'Kore' | 'Aoede' | 'Leda' = 'Puck',
   _langCode: string = 'ru'
 ): Promise<string | null> {
   // Strip markdown formatting tokens for crystal clear natural speech
@@ -360,67 +376,71 @@ export async function generateGeminiAudio(
     ? cleanSpeechText.slice(0, 1200) + '...'
     : cleanSpeechText;
 
-  // Send raw text directly to the dedicated TTS model — no meta-instructions needed,
-  // the model automatically detects language and reads with natural human pronunciation.
+  // Priority list: first original voice model (gemini-2.5-flash-preview-tts), then modern fallback
+  const models = ['gemini-2.5-flash-preview-tts', 'gemini-3.8-flash-lite-tts'];
   const totalKeys = keyManager.getKeyCount();
 
   for (let attempt = 0; attempt < totalKeys; attempt++) {
     const { key } = keyManager.getActiveKey();
-    
-    // Automatic retry loop for weak Wi-Fi connection fluctuations
-    for (let retry = 0; retry < 2; retry++) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000); // 12-second audio generation window
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash-tts:generateContent?key=${key}`;
+    for (const model of models) {
+      // Automatic retry loop for weak Wi-Fi connection fluctuations
+      for (let retry = 0; retry < 2; retry++) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-        const requestBody = {
-          contents: [{ parts: [{ text: spokenSnippet }] }],
-          generationConfig: {
-            responseModalities: ['AUDIO'],
-            speechConfig: {
-              voiceConfig: {
-                prebuiltVoiceConfig: {
-                  voiceName,
+          // Key passed in header: never exposed in the URL in DevTools Network tab!
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+
+          const requestBody = {
+            contents: [{ parts: [{ text: spokenSnippet }] }],
+            generationConfig: {
+              responseModalities: ['AUDIO'],
+              speechConfig: {
+                voiceConfig: {
+                  prebuiltVoiceConfig: {
+                    voiceName,
+                  },
                 },
               },
             },
-          },
-        };
+          };
 
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody),
-          signal: controller.signal,
-        });
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': key,
+            },
+            body: JSON.stringify(requestBody),
+            signal: controller.signal,
+          });
 
-        clearTimeout(timeoutId);
+          clearTimeout(timeoutId);
 
-        if (res.status === 429 || res.status === 403) {
-          keyManager.markCurrentKeyExhausted();
+          if (res.status === 429 || res.status === 403) {
+            keyManager.markCurrentKeyExhausted();
+            break;
+          }
+
+          if (!res.ok) {
+            break;
+          }
+
+          const data = await res.json();
+          const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+
+          if (inlineData?.data && typeof inlineData.data === 'string') {
+            const audioBlob = base64ToAudioBlob(inlineData.data, inlineData.mimeType, 24000);
+            return URL.createObjectURL(audioBlob);
+          }
+
           break;
+        } catch {
+          // Temporary Wi-Fi glitch, wait 350ms before retry
+          await new Promise((r) => setTimeout(r, 350));
         }
-
-        if (!res.ok) {
-          keyManager.markCurrentKeyExhausted();
-          break;
-        }
-
-        const data = await res.json();
-        const pcmBase64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-
-        if (pcmBase64 && typeof pcmBase64 === 'string') {
-          const wavBlob = pcm16ToWavBlob(pcmBase64, 24000);
-          return URL.createObjectURL(wavBlob);
-        }
-
-        keyManager.markCurrentKeyExhausted();
-        break;
-      } catch {
-        // Temporary Wi-Fi glitch, wait 400ms before retry
-        await new Promise((r) => setTimeout(r, 400));
       }
     }
   }
