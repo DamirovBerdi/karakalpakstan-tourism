@@ -342,8 +342,8 @@ export function pcm16ToWavBlob(pcm16Base64: string, sampleRate = 24000): Blob {
 // Generate high-fidelity Gemini Voice Audio
 export async function generateGeminiAudio(
   text: string,
-  voiceName: 'Puck' | 'Fenrir' | 'Charon' | 'Kore' | 'Aoede' = 'Puck',
-  langCode: string = 'ru'
+  voiceName: 'Puck' | 'Fenrir' | 'Charon' | 'Kore' | 'Aoede' | 'Leda' = 'Kore',
+  _langCode: string = 'ru'
 ): Promise<string | null> {
   // Strip markdown formatting tokens for crystal clear natural speech
   const cleanSpeechText = text
@@ -360,30 +360,8 @@ export async function generateGeminiAudio(
     ? cleanSpeechText.slice(0, 1200) + '...'
     : cleanSpeechText;
 
-  const LANG_NAME_MAP: Record<string, string> = {
-    ru: 'Russian',
-    en: 'English',
-    uz: 'Uzbek',
-    kaa: 'Karakalpak',
-    de: 'German',
-    fr: 'French',
-    es: 'Spanish',
-    it: 'Italian',
-    pt: 'Portuguese',
-    nl: 'Dutch',
-    ja: 'Japanese',
-    ko: 'Korean',
-    zh: 'Chinese',
-    ar: 'Arabic',
-    tr: 'Turkish',
-    kk: 'Kazakh',
-    ky: 'Kyrgyz',
-    tk: 'Turkmen',
-  };
-
-  const languageName = LANG_NAME_MAP[langCode] || 'Russian';
-  const promptText = `Speak out loud fluently and naturally in ${languageName}:\n\n${spokenSnippet}`;
-
+  // Send raw text directly to the dedicated TTS model — no meta-instructions needed,
+  // the model automatically detects language and reads with natural human pronunciation.
   const totalKeys = keyManager.getKeyCount();
 
   for (let attempt = 0; attempt < totalKeys; attempt++) {
@@ -393,12 +371,12 @@ export async function generateGeminiAudio(
     for (let retry = 0; retry < 2; retry++) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second audio generation window
+        const timeoutId = setTimeout(() => controller.abort(), 12000); // 12-second audio generation window
 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash-tts:generateContent?key=${key}`;
 
         const requestBody = {
-          contents: [{ parts: [{ text: promptText }] }],
+          contents: [{ parts: [{ text: spokenSnippet }] }],
           generationConfig: {
             responseModalities: ['AUDIO'],
             speechConfig: {
