@@ -50,7 +50,8 @@ export async function trackPageView(opts: TrackPageOptions = {}): Promise<void> 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${anonKey}`,
+        'apikey': anonKey,
+        'Authorization': `Bearer ${anonKey}`,
       },
       body: JSON.stringify({ sessionToken, pagePath, pageTitle, serviceUsed }),
     });
@@ -77,7 +78,8 @@ export async function trackServiceUsage(service: string, detail?: string): Promi
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${anonKey}`,
+        'apikey': anonKey,
+        'Authorization': `Bearer ${anonKey}`,
       },
       body: JSON.stringify({
         sessionToken,

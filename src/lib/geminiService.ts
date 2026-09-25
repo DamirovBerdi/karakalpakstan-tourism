@@ -395,7 +395,7 @@ export async function generateGeminiAudio(
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second audio generation window
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash-lite-tts:generateContent?key=${key}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${key}`;
 
         const requestBody = {
           contents: [{ parts: [{ text: promptText }] }],
